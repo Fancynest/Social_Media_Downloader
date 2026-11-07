@@ -200,6 +200,24 @@ def try_download_twitter_api(url: str, archive_set: set) -> bool:
     return False
 
 
+def prepare_clean_cookie_file() -> Path | None:
+    if not COOKIE_FILE.exists() or COOKIE_FILE.stat().st_size < 10:
+        return None
+    try:
+        text = COOKIE_FILE.read_text(encoding="utf-8", errors="ignore")
+        idx = text.find("# Netscape")
+        if idx != -1:
+            clean_content = text[idx:].strip() + "\n"
+        else:
+            clean_content = "# Netscape HTTP Cookie File\n" + text.strip() + "\n"
+
+        clean_path = BASE_DIR / ".cookies_active.txt"
+        clean_path.write_text(clean_content, encoding="utf-8")
+        return clean_path
+    except Exception:
+        return COOKIE_FILE if COOKIE_FILE.exists() else None
+
+
 def try_download_ytdlp(url: str) -> bool:
     ytdlp_bin = find_ytdlp()
     output_template = str(OUTPUT_DIR / "%(uploader)s_%(id)s_%(title).50s.%(ext)s")
@@ -216,9 +234,9 @@ def try_download_ytdlp(url: str) -> bool:
         "-o", output_template,
     ]
 
-    has_cookie = COOKIE_FILE.exists() and COOKIE_FILE.stat().st_size > 10
-    if has_cookie:
-        cmd.extend(["--cookies", str(COOKIE_FILE)])
+    clean_cookie = prepare_clean_cookie_file()
+    if clean_cookie and clean_cookie.exists():
+        cmd.extend(["--cookies", str(clean_cookie)])
 
     cmd.append(url)
     try:
