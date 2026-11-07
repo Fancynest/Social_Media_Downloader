@@ -3,11 +3,12 @@
 # ==============================================================================
 # Petunjuk Pengisian:
 # 1. TARGET_AKUN   : Masukkan 1 atau banyak akun Instagram (pisahkan dengan koma).
-#                    Contoh: sunat_palu, rumah_sunatan, https://www.instagram.com/klinik_khitan/
+#                    Contoh: akun_target_1, https://www.instagram.com/akun_target_2/
 # 2. KEYWORDS      : Masukkan kata kunci yang dicari pada caption (pisahkan koma).
+#                    Contoh: promo, diskon, event
 # 3. MAKSIMAL_POST : Jumlah postingan terbaru yang dicek per akun (isi 0 untuk semua).
 # ==============================================================================
 
-TARGET_AKUN=https://www.instagram.com/sunat_palu/
-KEYWORDS=sunatdewasa, sunat dewasa, khitandewasa, khitan dewasa, mualaf, khitanmualaf, sunatmualaf, hidayah, Hidayah, Mr, Abang, abang, mr, kakak
+TARGET_AKUN=https://www.instagram.com/akun_target_1/
+KEYWORDS=kata_kunci_1, kata_kunci_2
 MAKSIMAL_POST=0
