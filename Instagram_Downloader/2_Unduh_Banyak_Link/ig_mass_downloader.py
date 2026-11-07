@@ -18,6 +18,22 @@ if sys.platform.startswith("win"):
 import instaloader
 from instaloader.exceptions import TooManyRequestsException
 
+
+def _patch_instaloader_web_api():
+    """
+    Instagram deprecated /graphql/query for doc_id queries (returning 400 feedback_required or 302).
+    Routing doc_id queries to /api/graphql fixes profile and post metadata fetching in modern Instagram.
+    """
+    orig_doc_id = instaloader.InstaloaderContext.doc_id_graphql_query
+
+    def patched_doc_id(self, doc_id: str, variables: dict, referer=None, web_api: bool = True):
+        return orig_doc_id(self, doc_id, variables, referer=referer, web_api=True)
+
+    instaloader.InstaloaderContext.doc_id_graphql_query = patched_doc_id
+
+
+_patch_instaloader_web_api()
+
 BASE_DIR = Path(__file__).resolve().parent
 LINKS_FILE = BASE_DIR / "link_instagram.txt"
 HISTORY_FILE = BASE_DIR / "download_history.txt"

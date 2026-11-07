@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+import re
 import time
 import random
 import getpass
 import argparse
 from pathlib import Path
+from typing import Optional, Tuple
 
 if sys.platform.startswith("win"):
     try:
@@ -14,6 +16,7 @@ if sys.platform.startswith("win"):
     except Exception:
         pass
 
+import requests
 import instaloader
 from instaloader.exceptions import (
     ProfileNotExistsException,
@@ -23,6 +26,22 @@ from instaloader.exceptions import (
     BadCredentialsException,
     TwoFactorAuthRequiredException,
 )
+
+
+def _patch_instaloader_web_api():
+    """
+    Instagram deprecated /graphql/query for doc_id queries (returning 400 feedback_required or 302).
+    Routing doc_id queries to /api/graphql fixes profile and post metadata fetching in modern Instagram.
+    """
+    orig_doc_id = instaloader.InstaloaderContext.doc_id_graphql_query
+
+    def patched_doc_id(self, doc_id: str, variables: dict, referer: Optional[str] = None, web_api: bool = True):
+        return orig_doc_id(self, doc_id, variables, referer=referer, web_api=True)
+
+    instaloader.InstaloaderContext.doc_id_graphql_query = patched_doc_id
+
+
+_patch_instaloader_web_api()
 
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_FILE = BASE_DIR / "input_target.txt"
@@ -183,6 +202,63 @@ def prompt_user_input():
     }
 
 
+def verify_and_get_username(cookies: dict) -> Tuple[bool, Optional[str]]:
+    """
+    Memverifikasi validitas cookies ke Instagram web dan mendeteksi username akun.
+    Mengembalikan (is_valid, username).
+    """
+    session = requests.Session()
+    for domain in [".instagram.com", "instagram.com", "www.instagram.com"]:
+        for k, v in cookies.items():
+            session.cookies.set(k, v, domain=domain, path="/")
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,id;q=0.8",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-User": "?1",
+        "Sec-Fetch-Dest": "document",
+    }
+
+    try:
+        resp = session.get("https://www.instagram.com/", headers=headers, timeout=15, allow_redirects=True)
+        if "accounts/login" in resp.url.lower():
+            return False, None
+
+        # 1. Cari username dari PolarisViewer (struktur JSON internal Instagram web)
+        idx = resp.text.find('["PolarisViewer"')
+        if idx != -1:
+            snippet = resp.text[idx : idx + 4000]
+            m = re.search(r'"username":"([^"]+)"', snippet)
+            if m:
+                return True, m.group(1)
+
+        # 2. Cari dari payload viewer
+        m_viewer = re.search(r'"viewer":\s*\{[^}]*?"username":"([^"]+)"', resp.text)
+        if m_viewer:
+            return True, m_viewer.group(1)
+
+        uid = cookies.get("ds_user_id")
+        if uid and uid in resp.text:
+            m_uid = re.search(r'"username":"([^"]+)".*?"id":"' + re.escape(uid) + r'"', resp.text)
+            if m_uid:
+                return True, m_uid.group(1)
+            m_uid2 = re.search(r'"id":"' + re.escape(uid) + r'".*?"username":"([^"]+)"', resp.text)
+            if m_uid2:
+                return True, m_uid2.group(1)
+            return True, None
+
+        if resp.status_code == 200 and uid:
+            return True, None
+
+    except Exception as e:
+        print(f"     [!] Koneksi verifikasi: {e}")
+
+    return False, None
+
+
 def login_interactive():
     print("=" * 60)
     print(" AUTENTIKASI AKUN INSTAGRAM (COOKIE / SESI)")
@@ -220,34 +296,52 @@ def login_interactive():
             print("    Pastikan Anda sudah login ke instagram.com sebelum mengekspor cookies.")
             return
 
-        print(f"\n[*] Memverifikasi cookies ke server Instagram...")
+        print("\n[*] Memverifikasi cookies ke server Instagram...")
+        is_valid, detected_user = verify_and_get_username(cookies)
+
+        if not is_valid:
+            print("\n[x] Cookies tidak valid atau sesi browser telah kedaluwarsa.")
+            print("    Silakan buka instagram.com di browser, pastikan akun sudah login,")
+            print("    lalu ekspor ulang cookies dan paste ke input_cookie.txt.")
+            return
+
+        username = detected_user
+        if not username:
+            uid = cookies.get("ds_user_id", "")
+            print(f"\n[✓] Cookies valid terverifikasi (User ID: {uid})!")
+            raw_u = input("Masukkan username akun Instagram Anda untuk melengkapi sesi: ").strip()
+            username = extract_username(raw_u) or f"user_{uid}"
+
         loader = instaloader.Instaloader()
-        for k, v in cookies.items():
-            loader.context._session.cookies.set(k, v, domain=".instagram.com")
+        for domain in [".instagram.com", "instagram.com"]:
+            for k, v in cookies.items():
+                loader.context._session.cookies.set(k, v, domain=domain, path="/")
+        loader.context.username = username
 
         try:
-            username = loader.test_login()
-            if username:
-                loader.context.username = username
-                loader.save_session_to_file(str(SESSION_FILE))
-                # Juga bagikan sesi ke folder induk agar dapat dipakai tool lain
-                try:
-                    loader.save_session_to_file(str(BASE_DIR.parent / "session.dat"))
-                    with open(BASE_DIR.parent / "session_user.txt", "w", encoding="utf-8") as pf:
-                        pf.write(username)
-                except Exception:
-                    pass
+            loader.save_session_to_file(str(SESSION_FILE))
+            with open(USER_FILE, "w", encoding="utf-8") as f:
+                f.write(username)
 
-                with open(USER_FILE, "w", encoding="utf-8") as f:
-                    f.write(username)
-                print(f"\n[✓] BERHASIL LOGIN sebagai @{username}!")
-                print(f"[✓] Sesi login tersimpan pada: {SESSION_FILE.name}")
-                print("    Akun ini sekarang aktif untuk membuka postingan restricted & privat.")
-            else:
-                print("\n[x] Cookies tidak valid atau sesi browser telah kedaluwarsa.")
-                print("    Silakan ekspor ulang cookies yang masih aktif dari browser.")
+            # Bagikan sesi ke folder lain agar dapat dipakai bersama
+            shared_dirs = [
+                BASE_DIR.parent,
+                BASE_DIR.parent / "2_Unduh_Banyak_Link",
+            ]
+            for s_dir in shared_dirs:
+                if s_dir.exists():
+                    try:
+                        loader.save_session_to_file(str(s_dir / "session.dat"))
+                        with open(s_dir / "session_user.txt", "w", encoding="utf-8") as pf:
+                            pf.write(username)
+                    except Exception:
+                        pass
+
+            print(f"\n[✓] BERHASIL LOGIN sebagai @{username}!")
+            print(f"[✓] Sesi login tersimpan pada: {SESSION_FILE.name}")
+            print("    Akun ini sekarang aktif untuk membuka postingan restricted & privat.")
         except Exception as e:
-            print(f"\n[x] Verifikasi cookies gagal: {e}")
+            print(f"\n[x] Gagal menyimpan sesi login: {e}")
         return
 
     username = input("Username Instagram: ").strip()
