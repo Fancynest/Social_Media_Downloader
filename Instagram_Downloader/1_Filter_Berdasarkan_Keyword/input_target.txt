@@ -1,0 +1,16 @@
+# ==============================================================================
+# BERKAS KONFIGURASI: TARGET & PENYARING KATA KUNCI INSTAGRAM
+# ==============================================================================
+# Petunjuk Pengisian:
+# 1. TARGET_AKUN   : Masukkan tautan profil atau nama pengguna akun Instagram.
+#                    Contoh: https://www.instagram.com/nama_akun/ atau nama_akun
+# 2. KEYWORDS      : Masukkan kata kunci yang ingin dicari pada takarir/caption.
+#                    Pisahkan antarkata kunci dengan tanda koma (,).
+#                    Pencarian bersifat fleksibel (tidak membedakan huruf besar/kecil).
+# 3. MAKSIMAL_POST : Jumlah postingan terbaru yang ingin dipindai.
+#                    Isi angka '0' untuk memeriksa seluruh postingan akun.
+# ==============================================================================
+
+TARGET_AKUN=https://www.instagram.com/sunat_palu/
+KEYWORDS=sunatdewasa, sunat dewasa, khitandewasa, khitan dewasa, mualaf, khitanmualaf, sunatmualaf, hidayah, Hidayah, Mr, Abang, abang, mr, kakak
+MAKSIMAL_POST=0

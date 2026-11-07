@@ -1,0 +1,29 @@
+# Hasil download media (hindari upload file video/foto besar ke GitHub)
+**/Hasil_Download/
+Hasil_Download/
+*.mp4
+*.m4a
+*.webm
+
+# Riwayat download & sesi login (privasi & keamanan akun)
+**/download_history.txt
+download_history.txt
+**/session.dat
+session.dat
+**/session_user.txt
+session_user.txt
+
+# File sementara & cache Python
+*.tmp
+**/*.tmp
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE & OS files
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store

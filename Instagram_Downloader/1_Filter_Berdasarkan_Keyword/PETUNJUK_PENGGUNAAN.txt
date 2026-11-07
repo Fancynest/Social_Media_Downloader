@@ -1,0 +1,12 @@
+PANDUAN SINGKAT: INSTAGRAM FILTER DOWNLOADER
+=============================================
+1. Buka BUKA_INPUT_TARGET.bat, isi:
+   - TARGET_AKUN   : username atau link profil
+   - KEYWORDS      : kata kunci yang dicari (pisahkan koma)
+   - MAKSIMAL_POST : jumlah post dicek (0 untuk semua)
+2. Simpan (Ctrl+S), lalu klik 2x JALANKAN_DOWNLOADER.bat.
+3. Media hasil unduhan akan tersimpan di folder Hasil_Download\.
+
+Troubleshooting:
+- Jika terkena limit (429), aktifkan Mode Pesawat di HP selama 5 detik lalu matikan lagi.
+- Jika akun privat, jalankan LOGIN_AKUN.bat menggunakan akun sekunder.

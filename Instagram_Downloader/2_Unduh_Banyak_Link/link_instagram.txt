@@ -1,0 +1,16 @@
+# ==============================================================================
+# DAFTAR TAUTAN INSTAGRAM YANG INGIN DIUNDUH (MASS DOWNLOADER)
+# ==============================================================================
+# Petunjuk Pengisian:
+# 1. Tempelkan (paste) semua tautan postingan atau Reel Instagram di bawah ini.
+# 2. Satu baris untuk satu tautan.
+# 3. Baris yang diawali tanda pagar (#) akan otomatis diabaikan oleh sistem.
+# 4. Format tautan yang didukung:
+#    - https://www.instagram.com/reel/C-h1z8qvXk_/
+#    - https://www.instagram.com/p/C-h1z8qvXk_/
+# 5. Fitur Korsel: Jika postingan berisi banyak slide (foto/video),
+#    seluruh media dan takarirnya akan terunduh lengkap otomatis.
+# 6. Setelah menempelkan tautan, simpan berkas (CTRL + S), lalu tutup Notepad.
+# 7. Klik 2x "DOWNLOAD_SEKARANG.bat" untuk memulai pengunduhan.
+# ==============================================================================
+
