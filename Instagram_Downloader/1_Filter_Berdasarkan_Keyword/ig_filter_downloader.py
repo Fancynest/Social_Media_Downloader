@@ -46,28 +46,36 @@ def read_config():
     targets = []
     keywords = []
     max_posts = 50
+    current_key = None
 
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
+                if not line or line.startswith("#"):
                     continue
-                k, v = line.split("=", 1)
-                k = k.strip().upper()
-                v = v.strip()
-                if k == "TARGET_AKUN":
-                    for item in v.split(","):
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    current_key = k.strip().upper()
+                    val = v.strip()
+                else:
+                    val = line
+
+                if current_key == "TARGET_AKUN":
+                    for item in val.split(","):
                         cleaned = extract_username(item)
                         if cleaned and cleaned not in targets:
                             targets.append(cleaned)
-                elif k == "KEYWORDS":
-                    keywords = [item.strip().lower() for item in v.split(",") if item.strip()]
-                elif k == "MAKSIMAL_POST":
+                elif current_key == "KEYWORDS":
+                    for item in val.split(","):
+                        k_clean = item.strip().lower()
+                        if k_clean and k_clean not in keywords:
+                            keywords.append(k_clean)
+                elif current_key == "MAKSIMAL_POST":
                     try:
-                        max_posts = int(v)
+                        max_posts = int(val)
                     except ValueError:
-                        max_posts = 0
+                        pass
     except Exception as e:
         print(f"[!] Gagal membaca {CONFIG_FILE.name}: {e}")
 
