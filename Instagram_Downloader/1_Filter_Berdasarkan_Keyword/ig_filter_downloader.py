@@ -45,6 +45,7 @@ def read_config():
 
     targets = []
     keywords = []
+    hashtags = []
     max_posts = 50
     current_key = None
 
@@ -62,7 +63,7 @@ def read_config():
                     val = line
 
                 if current_key == "TARGET_AKUN":
-                    for item in val.split(","):
+                    for item in val.replace(",", " ").split():
                         cleaned = extract_username(item)
                         if cleaned and cleaned not in targets:
                             targets.append(cleaned)
@@ -71,6 +72,13 @@ def read_config():
                         k_clean = item.strip().lower()
                         if k_clean and k_clean not in keywords:
                             keywords.append(k_clean)
+                elif current_key == "HASHTAGS":
+                    for item in val.split(","):
+                        h_clean = item.strip().lower()
+                        if h_clean:
+                            tag = h_clean if h_clean.startswith("#") else f"#{h_clean}"
+                            if tag not in hashtags:
+                                hashtags.append(tag)
                 elif current_key == "MAKSIMAL_POST":
                     try:
                         max_posts = int(val)
@@ -79,15 +87,21 @@ def read_config():
     except Exception as e:
         print(f"[!] Gagal membaca {CONFIG_FILE.name}: {e}")
 
-    return {"targets": targets, "keywords": keywords, "max_posts": max_posts} if (targets and keywords) else None
+    has_filter = bool(keywords or hashtags)
+    return {
+        "targets": targets,
+        "keywords": keywords,
+        "hashtags": hashtags,
+        "max_posts": max_posts,
+    } if (targets and has_filter) else None
 
 
 def prompt_user_input():
     print("[*] Konfigurasi pencarian:\n")
     while True:
-        raw_target = input("  -> Akun Target (bisa 1 atau banyak akun, pisahkan koma): ").strip()
+        raw_target = input("  -> Akun Target (bisa 1 atau banyak akun, pisahkan koma/spasi): ").strip()
         targets = []
-        for item in raw_target.split(","):
+        for item in raw_target.replace(",", " ").split():
             cleaned = extract_username(item)
             if cleaned and cleaned not in targets:
                 targets.append(cleaned)
@@ -96,11 +110,20 @@ def prompt_user_input():
         print("     [!] Masukkan minimal satu username / link akun yang valid.")
 
     while True:
-        raw_kw = input("  -> Kata Kunci (pisahkan koma): ").strip()
+        raw_kw = input("  -> Kata Kunci / Keywords (pisahkan koma): ").strip()
         keywords = [k.strip().lower() for k in raw_kw.split(",") if k.strip()]
-        if keywords:
+        raw_ht = input("  -> Tagar / Hashtags (opsional, pisahkan koma, contoh #tag1, #tag2): ").strip()
+        hashtags = []
+        for item in raw_ht.split(","):
+            h = item.strip().lower()
+            if h:
+                tag = h if h.startswith("#") else f"#{h}"
+                if tag not in hashtags:
+                    hashtags.append(tag)
+
+        if keywords or hashtags:
             break
-        print("     [!] Masukkan minimal satu kata kunci.")
+        print("     [!] Masukkan minimal satu kata kunci atau tagar.")
 
     raw_max = input("  -> Maksimal postingan per akun (Enter untuk default 50, atau 0 untuk semua): ").strip()
     try:
@@ -116,13 +139,14 @@ def prompt_user_input():
                     "# Pengaturan Target Download Instagram\n"
                     f"TARGET_AKUN={', '.join(targets)}\n"
                     f"KEYWORDS={', '.join(keywords)}\n"
+                    f"HASHTAGS={', '.join(hashtags)}\n"
                     f"MAKSIMAL_POST={max_posts}\n"
                 )
             print("     [✓] Konfigurasi disimpan ke input_target.txt")
         except Exception as e:
             print(f"     [!] Gagal menyimpan konfigurasi: {e}")
 
-    return {"targets": targets, "keywords": keywords, "max_posts": max_posts}
+    return {"targets": targets, "keywords": keywords, "hashtags": hashtags, "max_posts": max_posts}
 
 
 def login_interactive():
@@ -233,7 +257,7 @@ def main():
         return
 
     print("=" * 60)
-    print(" INSTAGRAM DOWNLOADER - FILTER KEYWORD CAPTION (BATCH)")
+    print(" INSTAGRAM DOWNLOADER - FILTER KEYWORD & HASHTAG (BATCH)")
     print("=" * 60)
 
     config = read_config()
@@ -241,7 +265,10 @@ def main():
         print(f"[*] Ditemukan {len(config['targets'])} akun target di input_target.txt:")
         for t in config['targets']:
             print(f"    - @{t}")
-        print(f"[*] Kata Kunci    : {', '.join(config['keywords'])}")
+        if config['keywords']:
+            print(f"[*] Kata Kunci    : {', '.join(config['keywords'])}")
+        if config['hashtags']:
+            print(f"[*] Tagar/Hashtags: {', '.join(config['hashtags'])}")
         print(f"[*] Batas Per Akun: {config['max_posts'] if config['max_posts'] > 0 else 'Semua postingan'}")
         pilihan = input("\nGunakan pengaturan ini? (Y/n / ketik 'b' untuk input baru): ").strip().lower()
         if pilihan in ("n", "b", "no", "baru"):
@@ -251,6 +278,7 @@ def main():
 
     targets = config["targets"]
     keywords = config["keywords"]
+    hashtags = config["hashtags"]
     max_posts = config["max_posts"]
 
     loader = get_instaloader_instance()
@@ -287,7 +315,6 @@ def main():
         print(f"[+] Nama Akun      : {profile.full_name} (@{profile.username})")
         print(f"[+] Total Postingan: {profile.mediacount}")
         print(f"[+] Folder Simpan  : {out_dir}")
-        print(f"[+] Filter Keyword : {', '.join(keywords)}")
         print("-" * 60)
 
         scanned = 0
@@ -309,11 +336,15 @@ def main():
                 if preview:
                     print(f"    Caption: \"{preview}...\"")
 
+                # Cocokkan kata kunci dan tagar
                 hit_keywords = [k for k in keywords if k in cap_lower]
-                if hit_keywords:
+                hit_hashtags = [h for h in hashtags if h in cap_lower]
+                all_hits = hit_keywords + hit_hashtags
+
+                if all_hits:
                     matched += 1
                     global_matched += 1
-                    print(f"    >>> Cocok ({', '.join(hit_keywords)}). Mengunduh...")
+                    print(f"    >>> Cocok ({', '.join(all_hits)}). Mengunduh...")
                     try:
                         loader.download_post(post, target=out_dir)
                         print("    [✓] Berhasil diunduh.")
@@ -360,9 +391,9 @@ def main():
     print("\n" + "=" * 60)
     print(" REKAPITULASI PEMINDAIAN KESELURUHAN")
     print("=" * 60)
-    print(f" Total Akun Diproses : {len(account_summary)} dari {total_accounts}")
+    print(f" Total Akun Diproses  : {len(account_summary)} dari {total_accounts}")
     print(f" Total Postingan Dicek: {global_scanned}")
-    print(f" Total Cocok Diunduh : {global_matched}")
+    print(f" Total Cocok Diunduh  : {global_matched}")
     print("-" * 60)
     print(f" {'Akun Target':<22} | {'Dicek':<8} | {'Cocok':<8} | {'Status'}")
     print("-" * 60)
