@@ -2,13 +2,30 @@
 # PENGATURAN TARGET & PENYARING KATA KUNCI INSTAGRAM (MULTI-AKUN BATCH)
 # ==============================================================================
 # Petunjuk Pengisian:
-# 1. TARGET_AKUN   : Masukkan 1 atau banyak akun Instagram (pisahkan dengan koma).
-#                    Contoh: akun_target_1, https://www.instagram.com/akun_target_2/
-# 2. KEYWORDS      : Masukkan kata kunci yang dicari pada caption (pisahkan koma).
-#                    Contoh: promo, diskon, event
-# 3. MAKSIMAL_POST : Jumlah postingan terbaru yang dicek per akun (isi 0 untuk semua).
+# 1. TARGET_AKUN   : Masukkan 1 atau banyak tautan akun Instagram (bisa satu baris
+#                    dipisahkan koma/spasi atau baris baru per tautan).
+# 2. KEYWORDS      : Kata kunci pencarian pada teks takarir/caption (pisahkan koma).
+# 3. HASHTAGS      : Tagar spesifik yang dicari pada caption (pisahkan koma).
+# 4. MAKSIMAL_POST : Batas postingan yang dicek per akun (isi 0 untuk semua).
+# 5. SIMPAN_CAPTION: Apakah caption disimpan ke file .txt? (ya / tidak, default: tidak).
 # ==============================================================================
 
-TARGET_AKUN=https://www.instagram.com/akun_target_1/
-KEYWORDS=kata_kunci_1, kata_kunci_2
+TARGET_AKUN=
+https://www.instagram.com/sunathouse/ https://www.instagram.com/khitanlampung/
+https://www.instagram.com/rumahsunatrizki/
+https://www.instagram.com/tabebarigas_homecare/
+https://www.instagram.com/klinik_am_medika/
+https://www.instagram.com/khitananberkahgratis23/
+https://www.instagram.com/sunatmodernsatria/
+https://www.instagram.com/rumahsunatdokterai/
+https://www.instagram.com/sunat_sehat_samarinda/
+https://www.instagram.com/rumahsunatpremium/
+https://www.instagram.com/sunat_modern_palu/
+https://www.instagram.com/gohokhitanmodern/
+
+KEYWORDS=sunat dewasa, sunatdewasa, khitan dewasa, khitandewasa, khitanmualaf, khitan mualaf, khitanmuallaf, khitan muallaf, sunat mualaf, sunatmualaf, sunat muallaf, sunatmuallaf, pria dewasa, pasien dewasa, khitan pria, sunat pria, koh, koko, tn, mr, mr.x, mualaf, muallaf, saudarabaru, saudara baru, saudara seiman, saudara kita, bersyahadat, syahadat, masuk islam, hidayah, hijrah, om, abang, bapak, mas, china, tiongkok, tionghoa, chindo
+
+HASHTAGS=#sunatdewasa, #khitandewasa, #sunatmualaf, #khitanmualaf, #sunatmuallaf, #khitanmuallaf, #sunatdewasamodern, #khitandewasamodern, #sunatdewasatanpasakit, #mualaf, #muallaf, #mualafcenterindonesia, #khitanpria, #sunatpria, #hijrah, #masukislam
+
 MAKSIMAL_POST=0
+SIMPAN_CAPTION=tidak

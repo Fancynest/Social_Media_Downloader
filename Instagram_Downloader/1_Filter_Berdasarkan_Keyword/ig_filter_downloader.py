@@ -47,6 +47,7 @@ def read_config():
     keywords = []
     hashtags = []
     max_posts = 50
+    save_caption = False
     current_key = None
 
     try:
@@ -84,6 +85,8 @@ def read_config():
                         max_posts = int(val)
                     except ValueError:
                         pass
+                elif current_key == "SIMPAN_CAPTION":
+                    save_caption = val.strip().lower() in ("ya", "yes", "true", "1", "y")
     except Exception as e:
         print(f"[!] Gagal membaca {CONFIG_FILE.name}: {e}")
 
@@ -93,6 +96,7 @@ def read_config():
         "keywords": keywords,
         "hashtags": hashtags,
         "max_posts": max_posts,
+        "save_caption": save_caption,
     } if (targets and has_filter) else None
 
 
@@ -131,6 +135,9 @@ def prompt_user_input():
     except ValueError:
         max_posts = 50
 
+    raw_caption = input("  -> Simpan teks caption ke file .txt? (y/N, default N): ").strip().lower()
+    save_caption = raw_caption in ("y", "ya", "yes", "true", "1")
+
     save = input("\n  -> Simpan ke input_target.txt? (Y/n, default Y): ").strip().lower()
     if save in ("", "y", "ya", "yes"):
         try:
@@ -141,12 +148,19 @@ def prompt_user_input():
                     f"KEYWORDS={', '.join(keywords)}\n"
                     f"HASHTAGS={', '.join(hashtags)}\n"
                     f"MAKSIMAL_POST={max_posts}\n"
+                    f"SIMPAN_CAPTION={'ya' if save_caption else 'tidak'}\n"
                 )
             print("     [✓] Konfigurasi disimpan ke input_target.txt")
         except Exception as e:
             print(f"     [!] Gagal menyimpan konfigurasi: {e}")
 
-    return {"targets": targets, "keywords": keywords, "hashtags": hashtags, "max_posts": max_posts}
+    return {
+        "targets": targets,
+        "keywords": keywords,
+        "hashtags": hashtags,
+        "max_posts": max_posts,
+        "save_caption": save_caption,
+    }
 
 
 def login_interactive():
@@ -217,7 +231,7 @@ def login_interactive():
             print(f"[x] Gagal login: {e}")
 
 
-def get_instaloader_instance():
+def get_instaloader_instance(save_caption: bool = False):
     loader = instaloader.Instaloader(
         sleep=False,
         download_pictures=True,
@@ -227,7 +241,7 @@ def get_instaloader_instance():
         download_comments=False,
         save_metadata=False,
         compress_json=False,
-        post_metadata_txt_pattern="{caption}",
+        post_metadata_txt_pattern="{caption}" if save_caption else "",
         filename_pattern="{date_utc:%Y-%m-%d_%H-%M-%S}_{shortcode}",
     )
 
@@ -270,6 +284,7 @@ def main():
         if config['hashtags']:
             print(f"[*] Tagar/Hashtags: {', '.join(config['hashtags'])}")
         print(f"[*] Batas Per Akun: {config['max_posts'] if config['max_posts'] > 0 else 'Semua postingan'}")
+        print(f"[*] Simpan Caption: {'Ya (.txt)' if config.get('save_caption') else 'Tidak (Hanya Foto/Video)'}")
         pilihan = input("\nGunakan pengaturan ini? (Y/n / ketik 'b' untuk input baru): ").strip().lower()
         if pilihan in ("n", "b", "no", "baru"):
             config = prompt_user_input()
@@ -280,8 +295,9 @@ def main():
     keywords = config["keywords"]
     hashtags = config["hashtags"]
     max_posts = config["max_posts"]
+    save_caption = config.get("save_caption", False)
 
-    loader = get_instaloader_instance()
+    loader = get_instaloader_instance(save_caption=save_caption)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     total_accounts = len(targets)

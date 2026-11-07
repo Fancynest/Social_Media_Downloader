@@ -62,7 +62,7 @@ def append_history(item: str):
         pass
 
 
-def get_instaloader_instance():
+def get_instaloader_instance(save_caption: bool = False):
     loader = instaloader.Instaloader(
         sleep=False,
         download_pictures=True,
@@ -72,7 +72,7 @@ def get_instaloader_instance():
         download_comments=False,
         save_metadata=False,
         compress_json=False,
-        post_metadata_txt_pattern="{caption}",
+        post_metadata_txt_pattern="{caption}" if save_caption else "",
         filename_pattern="{date_utc:%Y-%m-%d_%H-%M-%S}_{shortcode}",
     )
     if SESSION_FILE.exists() and USER_FILE.exists():
@@ -117,11 +117,18 @@ def main():
         input("\nTekan Enter untuk keluar...")
         return
 
+    save_caption = False
     links = []
     with open(LINKS_FILE, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line and not line.startswith("#"):
+            if not line:
+                continue
+            if line.upper().startswith("SIMPAN_CAPTION="):
+                val = line.split("=", 1)[1].strip().lower()
+                save_caption = val in ("ya", "yes", "true", "1", "y")
+                continue
+            if not line.startswith("#"):
                 links.append(line)
 
     if not links:
@@ -134,9 +141,10 @@ def main():
     ytdlp_bin = find_ytdlp()
 
     print(f" Folder Simpan : {OUTPUT_DIR}")
-    print(f" Total Tautan  : {len(links)}\n")
+    print(f" Total Tautan  : {len(links)}")
+    print(f" Simpan Caption: {'Ya (.txt)' if save_caption else 'Tidak (Hanya Foto/Video)'}\n")
 
-    loader = get_instaloader_instance()
+    loader = get_instaloader_instance(save_caption=save_caption)
     success, skipped, failed = 0, 0, 0
 
     for idx, url in enumerate(links, 1):
