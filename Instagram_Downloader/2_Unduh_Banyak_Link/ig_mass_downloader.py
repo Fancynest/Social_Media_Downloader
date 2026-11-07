@@ -19,10 +19,10 @@ import instaloader
 from instaloader.exceptions import TooManyRequestsException
 
 
-def _patch_instaloader_web_api():
+def _patch_instaloader():
     """
-    Instagram deprecated /graphql/query for doc_id queries (returning 400 feedback_required or 302).
-    Routing doc_id queries to /api/graphql fixes profile and post metadata fetching in modern Instagram.
+    1. Arahkan query doc_id GraphQL ke /api/graphql agar tidak terkena 400 feedback_required / 302.
+    2. Fallback Profile.from_username dengan sesi login untuk akun dengan konten restricted / sensitif / batas usia.
     """
     orig_doc_id = instaloader.InstaloaderContext.doc_id_graphql_query
 
@@ -31,8 +31,39 @@ def _patch_instaloader_web_api():
 
     instaloader.InstaloaderContext.doc_id_graphql_query = patched_doc_id
 
+    orig_from_username = instaloader.Profile.from_username
 
-_patch_instaloader_web_api()
+    def patched_from_username(cls, context, username: str):
+        try:
+            return orig_from_username(context, username)
+        except instaloader.exceptions.ProfileNotExistsException:
+            if not context.is_logged_in:
+                raise
+            try:
+                html = context._get_page(context._session, f"{username.lower()}/")
+            except Exception:
+                raise instaloader.exceptions.ProfileNotExistsException(f"Profile {username} does not exist.")
+
+            if "Sorry, this page isn't available" in html or "Halaman ini tidak tersedia" in html:
+                raise instaloader.exceptions.ProfileNotExistsException(f"Profile {username} does not exist.")
+
+            m_pid = re.findall(r'"profile_id":"(\d+)"', html)
+            if not m_pid:
+                m_pid = re.findall(r'"page_id":"profilePage_(\d+)"', html)
+            if not m_pid:
+                m_pid = re.findall(r'"props":\{"id":"(\d+)"', html)
+
+            if m_pid:
+                pid = m_pid[0]
+                node = {"id": str(pid), "pk": int(pid), "username": username.lower()}
+                return cls(context, node)
+
+            raise instaloader.exceptions.ProfileNotExistsException(f"Profile {username} does not exist.")
+
+    instaloader.Profile.from_username = classmethod(patched_from_username)
+
+
+_patch_instaloader()
 
 BASE_DIR = Path(__file__).resolve().parent
 LINKS_FILE = BASE_DIR / "link_instagram.txt"

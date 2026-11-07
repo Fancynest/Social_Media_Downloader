@@ -11,8 +11,7 @@
 # ==============================================================================
 
 TARGET_AKUN=
-https://www.instagram.com/sunathouse/ https://www.instagram.com/khitanlampung/
-https://www.instagram.com/rumahsunatrizki/
+https://www.instagram.com/khitanlampung/
 https://www.instagram.com/tabebarigas_homecare/
 https://www.instagram.com/klinik_am_medika/
 https://www.instagram.com/khitananberkahgratis23/
