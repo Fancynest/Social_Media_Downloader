@@ -4,6 +4,7 @@ import sys
 import re
 import time
 import json
+import shutil
 import urllib.request
 import subprocess
 from pathlib import Path
@@ -19,6 +20,18 @@ BASE_DIR = Path(__file__).resolve().parent
 TXT_FILE = BASE_DIR / "link_video.txt"
 OUTPUT_DIR = BASE_DIR / "Hasil_Download"
 ARCHIVE_FILE = BASE_DIR / "download_history.txt"
+COOKIE_FILE = BASE_DIR / "input_cookie.txt"
+
+
+def find_ytdlp() -> str:
+    bin_path = shutil.which("yt-dlp")
+    if bin_path:
+        return bin_path
+    winget_path = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "WinGet" / "Packages"
+    for match in winget_path.glob("**/yt-dlp.exe"):
+        if match.is_file():
+            return str(match)
+    return "yt-dlp"
 
 
 def sanitize_filename(name: str) -> str:
@@ -188,9 +201,10 @@ def try_download_twitter_api(url: str, archive_set: set) -> bool:
 
 
 def try_download_ytdlp(url: str) -> bool:
+    ytdlp_bin = find_ytdlp()
     output_template = str(OUTPUT_DIR / "%(uploader)s_%(id)s_%(title).50s.%(ext)s")
     cmd = [
-        "yt-dlp",
+        ytdlp_bin,
         "--no-warnings",
         "--ignore-errors",
         "--no-overwrites",
@@ -200,8 +214,13 @@ def try_download_ytdlp(url: str) -> bool:
         "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "--merge-output-format", "mp4",
         "-o", output_template,
-        url
     ]
+
+    has_cookie = COOKIE_FILE.exists() and COOKIE_FILE.stat().st_size > 10
+    if has_cookie:
+        cmd.extend(["--cookies", str(COOKIE_FILE)])
+
+    cmd.append(url)
     try:
         res = subprocess.run(cmd)
         return res.returncode == 0
@@ -216,6 +235,14 @@ def run_download():
     print("=" * 60)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     archive_set = load_archive()
+
+    has_cookie = COOKIE_FILE.exists() and COOKIE_FILE.stat().st_size > 10
+    if has_cookie:
+        print("[+] Cookies aktif: 'input_cookie.txt' dimuat (Bypass konten sensitif & 18+)")
+    else:
+        print("[i] Berjalan dalam Mode Tamu (Tanpa cookies)")
+        print("    Tips: Jika ada konten sensitif/18+ yang gagal diunduh, ekspor cookies")
+        print("    dari x.com ke berkas 'input_cookie.txt' (klik BUKA_NOTEPAD_COOKIE.bat).")
 
     links = load_links()
     if not links:

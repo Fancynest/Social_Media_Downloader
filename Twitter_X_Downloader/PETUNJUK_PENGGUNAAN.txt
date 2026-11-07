@@ -6,7 +6,12 @@ PANDUAN SINGKAT: X (TWITTER) MEDIA DOWNLOADER
 3. Simpan (Ctrl+S), lalu klik 2x DOWNLOAD_SEKARANG.bat.
 4. Media hasil unduhan akan tersimpan di folder Hasil_Download\.
 
-Fitur:
+Fitur & Solusi Konten Sensitif:
 - Otomatis mengambil foto dengan resolusi asli (original).
 - Otomatis mengambil video dengan kualitas/bitrate tertinggi.
 - Otomatis melewati media yang sudah pernah diunduh sebelumnya.
+- Jika ada postingan bertanda SENSITIF / 18+:
+  a. Buka x.com -> Settings -> Privacy and safety -> Content you see -> Centang "Display media that may contain sensitive content".
+  b. Ekspor cookies x.com menggunakan ekstensi "Get cookies.txt LOCALLY".
+  c. Klik BUKA_NOTEPAD_COOKIE.bat dan paste cookies di sana.
+  d. Jalankan DOWNLOAD_SEKARANG.bat. Media sensitif akan langsung terunduh!
