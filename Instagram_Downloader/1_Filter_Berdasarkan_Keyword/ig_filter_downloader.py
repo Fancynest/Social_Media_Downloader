@@ -43,7 +43,7 @@ def read_config():
     if not CONFIG_FILE.exists():
         return None
 
-    target = ""
+    targets = []
     keywords = []
     max_posts = 50
 
@@ -57,7 +57,10 @@ def read_config():
                 k = k.strip().upper()
                 v = v.strip()
                 if k == "TARGET_AKUN":
-                    target = extract_username(v)
+                    for item in v.split(","):
+                        cleaned = extract_username(item)
+                        if cleaned and cleaned not in targets:
+                            targets.append(cleaned)
                 elif k == "KEYWORDS":
                     keywords = [item.strip().lower() for item in v.split(",") if item.strip()]
                 elif k == "MAKSIMAL_POST":
@@ -68,17 +71,21 @@ def read_config():
     except Exception as e:
         print(f"[!] Gagal membaca {CONFIG_FILE.name}: {e}")
 
-    return {"target": target, "keywords": keywords, "max_posts": max_posts} if (target and keywords) else None
+    return {"targets": targets, "keywords": keywords, "max_posts": max_posts} if (targets and keywords) else None
 
 
 def prompt_user_input():
     print("[*] Konfigurasi pencarian:\n")
     while True:
-        raw_target = input("  -> Akun Target (username / link profil): ").strip()
-        target = extract_username(raw_target)
-        if target:
+        raw_target = input("  -> Akun Target (bisa 1 atau banyak akun, pisahkan koma): ").strip()
+        targets = []
+        for item in raw_target.split(","):
+            cleaned = extract_username(item)
+            if cleaned and cleaned not in targets:
+                targets.append(cleaned)
+        if targets:
             break
-        print("     [!] Username tidak boleh kosong.")
+        print("     [!] Masukkan minimal satu username / link akun yang valid.")
 
     while True:
         raw_kw = input("  -> Kata Kunci (pisahkan koma): ").strip()
@@ -87,7 +94,7 @@ def prompt_user_input():
             break
         print("     [!] Masukkan minimal satu kata kunci.")
 
-    raw_max = input("  -> Maksimal postingan diperiksa (Enter untuk default 50, atau 0 untuk semua): ").strip()
+    raw_max = input("  -> Maksimal postingan per akun (Enter untuk default 50, atau 0 untuk semua): ").strip()
     try:
         max_posts = int(raw_max) if raw_max else 50
     except ValueError:
@@ -99,7 +106,7 @@ def prompt_user_input():
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 f.write(
                     "# Pengaturan Target Download Instagram\n"
-                    f"TARGET_AKUN={target}\n"
+                    f"TARGET_AKUN={', '.join(targets)}\n"
                     f"KEYWORDS={', '.join(keywords)}\n"
                     f"MAKSIMAL_POST={max_posts}\n"
                 )
@@ -107,7 +114,7 @@ def prompt_user_input():
         except Exception as e:
             print(f"     [!] Gagal menyimpan konfigurasi: {e}")
 
-    return {"target": target, "keywords": keywords, "max_posts": max_posts}
+    return {"targets": targets, "keywords": keywords, "max_posts": max_posts}
 
 
 def login_interactive():
@@ -218,111 +225,146 @@ def main():
         return
 
     print("=" * 60)
-    print(" INSTAGRAM DOWNLOADER - FILTER KEYWORD CAPTION")
+    print(" INSTAGRAM DOWNLOADER - FILTER KEYWORD CAPTION (BATCH)")
     print("=" * 60)
 
     config = read_config()
     if config:
-        print("[*] Pengaturan aktif dari input_target.txt:")
-        print(f"    - Target Akun   : @{config['target']}")
-        print(f"    - Kata Kunci    : {', '.join(config['keywords'])}")
-        print(f"    - Maksimal Post : {config['max_posts'] if config['max_posts'] > 0 else 'Semua'}")
+        print(f"[*] Ditemukan {len(config['targets'])} akun target di input_target.txt:")
+        for t in config['targets']:
+            print(f"    - @{t}")
+        print(f"[*] Kata Kunci    : {', '.join(config['keywords'])}")
+        print(f"[*] Batas Per Akun: {config['max_posts'] if config['max_posts'] > 0 else 'Semua postingan'}")
         pilihan = input("\nGunakan pengaturan ini? (Y/n / ketik 'b' untuk input baru): ").strip().lower()
         if pilihan in ("n", "b", "no", "baru"):
             config = prompt_user_input()
     else:
         config = prompt_user_input()
 
-    target = config["target"]
+    targets = config["targets"]
     keywords = config["keywords"]
     max_posts = config["max_posts"]
 
     loader = get_instaloader_instance()
-    out_dir = OUTPUT_DIR / target
-    out_dir.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n[*] Mengambil profil @{target}...")
-    try:
-        profile = instaloader.Profile.from_username(loader.context, target)
-    except ProfileNotExistsException:
-        print(f"[x] Akun @{target} tidak ditemukan. Periksa kembali username.")
-        input("\nTekan Enter untuk keluar...")
-        return
-    except LoginRequiredException:
-        print("[x] Instagram meminta login untuk mengakses profil ini.")
-        print("    Jalankan LOGIN_AKUN.bat menggunakan akun sekunder.")
-        input("\nTekan Enter untuk keluar...")
-        return
-    except Exception as e:
-        print(f"[x] Gagal mengakses profil: {e}")
-        input("\nTekan Enter untuk keluar...")
-        return
+    total_accounts = len(targets)
+    global_scanned = 0
+    global_matched = 0
+    account_summary = []
 
-    print(f"[+] Akun ditemukan: {profile.full_name} (@{profile.username})")
-    print(f"[+] Total Post    : {profile.mediacount}")
-    print(f"[+] Folder Simpan : {out_dir}")
-    print(f"[+] Filter Keyword: {', '.join(keywords)}")
-    print("-" * 60)
-    print("[*] Memulai pemindaian...\n")
+    for acc_idx, target in enumerate(targets, 1):
+        print("\n" + "=" * 60)
+        print(f" [{acc_idx}/{total_accounts}] MEMPROSES TARGET: @{target}")
+        print("=" * 60)
 
-    scanned = 0
-    matched = 0
+        out_dir = OUTPUT_DIR / target
+        out_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        for post in profile.get_posts():
-            scanned += 1
-            caption = post.caption or ""
-            cap_lower = caption.lower()
-            kind = "Video" if post.is_video else "Foto/Korsel"
-            date_str = post.date_local.strftime("%Y-%m-%d %H:%M")
-            preview = caption.replace("\n", " ")[:60]
-
-            print(f"[{scanned}] [{date_str}] [{kind}] {post.shortcode}")
-            if preview:
-                print(f"    Caption: \"{preview}...\"")
-
-            hit_keywords = [k for k in keywords if k in cap_lower]
-            if hit_keywords:
-                matched += 1
-                print(f"    >>> Cocok ({', '.join(hit_keywords)}). Mengunduh...")
-                try:
-                    loader.download_post(post, target=out_dir)
-                    print("    [✓] Berhasil diunduh.")
-                except Exception as dl_err:
-                    print(f"    [!] Error saat mengunduh: {dl_err}")
-            else:
-                print("    [-] Tidak cocok, dilewati.")
-
-            print("-" * 60)
-
-            if max_posts > 0 and scanned >= max_posts:
-                print(f"[*] Batas {max_posts} postingan tercapai.")
-                break
-
-            time.sleep(random.uniform(1.2, 1.8))
-
-    except KeyboardInterrupt:
-        print("\n[!] Dihentikan oleh pengguna.")
-    except PrivateProfileNotFollowedException:
-        print("\n[x] Akun ini privat dan akun Anda belum mem-follow akun ini.")
-    except TooManyRequestsException:
-        print("\n[!] Rate limit Instagram tercapai (429 Too Many Requests).")
-        print("    Solusi: Nyalakan Mode Pesawat di HP selama 5 detik lalu matikan lagi untuk ganti IP.")
-    except Exception as e:
-        print(f"\n[x] Terjadi kendala: {e}")
-
-    print("\n" + "=" * 60)
-    print(" RINGKASAN PEMINDAIAN")
-    print("=" * 60)
-    print(f" Akun Target         : @{target}")
-    print(f" Total Post Dicek    : {scanned}")
-    print(f" Post Cocok Diunduh  : {matched}")
-    print(f" Folder Penyimpanan  : {out_dir}")
-    print("=" * 60)
-
-    if matched > 0 and sys.platform.startswith("win"):
         try:
-            os.startfile(str(out_dir))
+            profile = instaloader.Profile.from_username(loader.context, target)
+        except ProfileNotExistsException:
+            print(f"[x] Akun @{target} tidak ditemukan. Melewati ke target berikutnya...")
+            account_summary.append({"account": target, "scanned": 0, "matched": 0, "status": "Tidak ditemukan"})
+            continue
+        except LoginRequiredException:
+            print(f"[x] Akun @{target} memerlukan login. Jalankan LOGIN_AKUN.bat.")
+            account_summary.append({"account": target, "scanned": 0, "matched": 0, "status": "Perlu login"})
+            continue
+        except Exception as e:
+            print(f"[x] Gagal mengakses profil @{target}: {e}")
+            account_summary.append({"account": target, "scanned": 0, "matched": 0, "status": "Error akses"})
+            continue
+
+        print(f"[+] Nama Akun      : {profile.full_name} (@{profile.username})")
+        print(f"[+] Total Postingan: {profile.mediacount}")
+        print(f"[+] Folder Simpan  : {out_dir}")
+        print(f"[+] Filter Keyword : {', '.join(keywords)}")
+        print("-" * 60)
+
+        scanned = 0
+        matched = 0
+        stopped_early = False
+        rate_limited = False
+
+        try:
+            for post in profile.get_posts():
+                scanned += 1
+                global_scanned += 1
+                caption = post.caption or ""
+                cap_lower = caption.lower()
+                kind = "Video" if post.is_video else "Foto/Korsel"
+                date_str = post.date_local.strftime("%Y-%m-%d %H:%M")
+                preview = caption.replace("\n", " ")[:60]
+
+                print(f"[{scanned}] [{date_str}] [{kind}] {post.shortcode}")
+                if preview:
+                    print(f"    Caption: \"{preview}...\"")
+
+                hit_keywords = [k for k in keywords if k in cap_lower]
+                if hit_keywords:
+                    matched += 1
+                    global_matched += 1
+                    print(f"    >>> Cocok ({', '.join(hit_keywords)}). Mengunduh...")
+                    try:
+                        loader.download_post(post, target=out_dir)
+                        print("    [✓] Berhasil diunduh.")
+                    except Exception as dl_err:
+                        print(f"    [!] Error saat mengunduh: {dl_err}")
+                else:
+                    print("    [-] Tidak cocok, dilewati.")
+
+                print("-" * 60)
+
+                if max_posts > 0 and scanned >= max_posts:
+                    print(f"[*] Batas {max_posts} postingan untuk @{target} tercapai.")
+                    break
+
+                time.sleep(random.uniform(1.2, 1.8))
+
+        except KeyboardInterrupt:
+            print(f"\n[!] Pemindaian @{target} dihentikan pengguna.")
+            stopped_early = True
+        except PrivateProfileNotFollowedException:
+            print(f"\n[x] Akun @{target} privat dan Anda belum follow.")
+        except TooManyRequestsException:
+            print("\n[!] Rate limit Instagram tercapai (429 Too Many Requests).")
+            print("    Solusi: Nyalakan Mode Pesawat di HP selama 5 detik lalu matikan lagi untuk ganti IP.")
+            rate_limited = True
+        except Exception as e:
+            print(f"\n[x] Kendala saat memindai: {e}")
+
+        account_summary.append({
+            "account": target,
+            "scanned": scanned,
+            "matched": matched,
+            "status": "Selesai" if not rate_limited else "Rate limit"
+        })
+
+        if stopped_early or rate_limited:
+            break
+
+        if acc_idx < total_accounts:
+            print("\n[*] Jeda 3 detik sebelum melanjutkan ke target berikutnya...")
+            time.sleep(3)
+
+    # Rekapitulasi Akhir
+    print("\n" + "=" * 60)
+    print(" REKAPITULASI PEMINDAIAN KESELURUHAN")
+    print("=" * 60)
+    print(f" Total Akun Diproses : {len(account_summary)} dari {total_accounts}")
+    print(f" Total Postingan Dicek: {global_scanned}")
+    print(f" Total Cocok Diunduh : {global_matched}")
+    print("-" * 60)
+    print(f" {'Akun Target':<22} | {'Dicek':<8} | {'Cocok':<8} | {'Status'}")
+    print("-" * 60)
+    for s in account_summary:
+        print(f" @{s['account']:<21} | {s['scanned']:<8} | {s['matched']:<8} | {s['status']}")
+    print("=" * 60)
+
+    if global_matched > 0 and sys.platform.startswith("win"):
+        try:
+            os.startfile(str(OUTPUT_DIR))
         except Exception:
             pass
 

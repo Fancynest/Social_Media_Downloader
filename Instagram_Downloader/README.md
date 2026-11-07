@@ -33,8 +33,8 @@ Instagram_Downloader/
 
 ### Modul 1: Filter Berdasarkan Keyword
 1. Buka `BUKA_INPUT_TARGET.bat`.
-2. Isi `TARGET_AKUN`, `KEYWORDS` (pisahkan koma), dan `MAKSIMAL_POST` (0 = semua).
-3. Jalankan `JALANKAN_DOWNLOADER.bat`.
+2. Isi `TARGET_AKUN` (bisa 1 atau banyak akun sekaligus dipisahkan koma), `KEYWORDS` (pisahkan koma), dan `MAKSIMAL_POST` (0 = semua).
+3. Jalankan `JALANKAN_DOWNLOADER.bat`. Skrip akan memproses seluruh antrean akun secara berurutan.
 
 ### Modul 2: Unduh Banyak Link
 1. Buka `BUKA_NOTEPAD_LINK.bat`.

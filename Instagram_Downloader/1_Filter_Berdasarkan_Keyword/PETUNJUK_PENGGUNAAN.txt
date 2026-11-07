@@ -1,11 +1,12 @@
-PANDUAN SINGKAT: INSTAGRAM FILTER DOWNLOADER
-=============================================
+PANDUAN SINGKAT: INSTAGRAM FILTER DOWNLOADER (MULTI-AKUN BATCH)
+=================================================================
 1. Buka BUKA_INPUT_TARGET.bat, isi:
-   - TARGET_AKUN   : username atau link profil
+   - TARGET_AKUN   : username atau link profil (bisa banyak akun, pisahkan koma)
    - KEYWORDS      : kata kunci yang dicari (pisahkan koma)
-   - MAKSIMAL_POST : jumlah post dicek (0 untuk semua)
+   - MAKSIMAL_POST : batas postingan yang dicek per akun (0 untuk semua)
 2. Simpan (Ctrl+S), lalu klik 2x JALANKAN_DOWNLOADER.bat.
-3. Media hasil unduhan akan tersimpan di folder Hasil_Download\.
+3. Skrip akan memproses antrean akun secara berurutan dan menyimpan hasilnya
+   ke folder Hasil_Download\<nama_akun>\ masing-masing.
 
 Troubleshooting:
 - Jika terkena limit (429), aktifkan Mode Pesawat di HP selama 5 detik lalu matikan lagi.

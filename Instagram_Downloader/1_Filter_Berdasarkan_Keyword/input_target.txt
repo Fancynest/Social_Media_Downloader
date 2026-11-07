@@ -1,14 +1,11 @@
 # ==============================================================================
-# BERKAS KONFIGURASI: TARGET & PENYARING KATA KUNCI INSTAGRAM
+# PENGATURAN TARGET & PENYARING KATA KUNCI INSTAGRAM (MULTI-AKUN BATCH)
 # ==============================================================================
 # Petunjuk Pengisian:
-# 1. TARGET_AKUN   : Masukkan tautan profil atau nama pengguna akun Instagram.
-#                    Contoh: https://www.instagram.com/nama_akun/ atau nama_akun
-# 2. KEYWORDS      : Masukkan kata kunci yang ingin dicari pada takarir/caption.
-#                    Pisahkan antarkata kunci dengan tanda koma (,).
-#                    Pencarian bersifat fleksibel (tidak membedakan huruf besar/kecil).
-# 3. MAKSIMAL_POST : Jumlah postingan terbaru yang ingin dipindai.
-#                    Isi angka '0' untuk memeriksa seluruh postingan akun.
+# 1. TARGET_AKUN   : Masukkan 1 atau banyak akun Instagram (pisahkan dengan koma).
+#                    Contoh: sunat_palu, rumah_sunatan, https://www.instagram.com/klinik_khitan/
+# 2. KEYWORDS      : Masukkan kata kunci yang dicari pada caption (pisahkan koma).
+# 3. MAKSIMAL_POST : Jumlah postingan terbaru yang dicek per akun (isi 0 untuk semua).
 # ==============================================================================
 
 TARGET_AKUN=https://www.instagram.com/sunat_palu/

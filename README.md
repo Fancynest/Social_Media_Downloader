@@ -63,8 +63,8 @@ Social_Media_Downloader/
 
 ### Instagram (Penyaring Kata Kunci)
 1. Buka `Instagram_Downloader/1_Filter_Berdasarkan_Keyword/BUKA_INPUT_TARGET.bat`.
-2. Masukkan username akun target dan kata kunci yang ingin difilter.
-3. Jalankan `JALANKAN_DOWNLOADER.bat`.
+2. Masukkan akun target (bisa 1 atau banyak akun sekaligus dipisahkan koma) dan kata kunci yang ingin difilter.
+3. Jalankan `JALANKAN_DOWNLOADER.bat`. Skrip akan memproses seluruh antrean akun secara berurutan.
 
 ### Instagram (Daftar Banyak Link)
 1. Buka `Instagram_Downloader/2_Unduh_Banyak_Link/BUKA_NOTEPAD_LINK.bat`.
