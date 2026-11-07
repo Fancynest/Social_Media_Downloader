@@ -75,16 +75,22 @@ def get_instaloader_instance(save_caption: bool = False):
         post_metadata_txt_pattern="{caption}" if save_caption else "",
         filename_pattern="{date_utc:%Y-%m-%d_%H-%M-%S}_{shortcode}",
     )
-    if SESSION_FILE.exists() and USER_FILE.exists():
-        try:
-            with open(USER_FILE, "r", encoding="utf-8") as f:
-                saved_user = f.read().strip()
-            if saved_user:
-                loader.load_session_from_file(saved_user, str(SESSION_FILE))
-                print(f"[+] Sesi aktif: @{saved_user}")
-                return loader
-        except Exception:
-            pass
+    session_locations = [
+        (SESSION_FILE, USER_FILE),
+        (BASE_DIR.parent / "session.dat", BASE_DIR.parent / "session_user.txt"),
+        (BASE_DIR.parent / "1_Filter_Berdasarkan_Keyword" / "session.dat", BASE_DIR.parent / "1_Filter_Berdasarkan_Keyword" / "session_user.txt"),
+    ]
+    for s_file, u_file in session_locations:
+        if s_file.exists() and u_file.exists():
+            try:
+                with open(u_file, "r", encoding="utf-8") as f:
+                    saved_user = f.read().strip()
+                if saved_user:
+                    loader.load_session_from_file(saved_user, str(s_file))
+                    print(f"[+] Sesi aktif: @{saved_user}")
+                    return loader
+            except Exception:
+                pass
     print("[+] Berjalan dalam Mode Tamu (Tanpa login)")
     return loader
 

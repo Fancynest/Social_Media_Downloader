@@ -12,6 +12,8 @@ download_history.txt
 session.dat
 **/session_user.txt
 session_user.txt
+**/input_cookie.txt
+input_cookie.txt
 
 # File sementara & cache Python
 *.tmp

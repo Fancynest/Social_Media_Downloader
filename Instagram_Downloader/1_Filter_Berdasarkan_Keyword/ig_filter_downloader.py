@@ -26,9 +26,29 @@ from instaloader.exceptions import (
 
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_FILE = BASE_DIR / "input_target.txt"
+COOKIE_FILE = BASE_DIR / "input_cookie.txt"
 SESSION_FILE = BASE_DIR / "session.dat"
 USER_FILE = BASE_DIR / "session_user.txt"
 OUTPUT_DIR = BASE_DIR / "Hasil_Download"
+
+
+def parse_cookies_from_text(text: str) -> dict:
+    cookies = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 7:
+            cookies[parts[5].strip()] = parts[6].strip()
+        elif "=" in line:
+            for item in line.split(";"):
+                if "=" in item:
+                    k, v = item.split("=", 1)
+                    cookies[k.strip()] = v.strip().strip('"').strip("'")
+        elif len(line) > 15 and ("%3A" in line or len(line) > 25):
+            cookies["sessionid"] = line.strip().strip('"').strip("'")
+    return cookies
 
 
 def extract_username(val: str) -> str:
@@ -165,37 +185,69 @@ def prompt_user_input():
 
 def login_interactive():
     print("=" * 60)
-    print(" AUTENTIKASI AKUN INSTAGRAM (OPSIONAL)")
+    print(" AUTENTIKASI AKUN INSTAGRAM (COOKIE / SESI)")
     print("=" * 60)
-    print("1. Cookie 'sessionid' browser (Rekomendasi, anti-checkpoint)")
+    print("1. Melalui Notepad 'input_cookie.txt' (Ekstensi 'Get cookies.txt' / sessionid)")
     print("2. Login langsung (Username & Password)\n")
 
     choice = input("Pilih metode (1/2, default 1): ").strip()
     if choice != "2":
-        print("\nCara ambil sessionid dari browser:")
-        print("1. Buka instagram.com yang sudah login di Chrome/Edge.")
-        print("2. Tekan F12 -> tab Application -> Cookies -> https://www.instagram.com")
-        print("3. Salin isi Value dari 'sessionid'.\n")
+        cookie_text = ""
+        if COOKIE_FILE.exists():
+            with open(COOKIE_FILE, "r", encoding="utf-8", errors="ignore") as f:
+                cookie_text = f.read().strip()
 
-        session_id = input("Paste nilai sessionid: ").strip().strip('"').strip("'")
+        # Jika masih kosong atau hanya komentar, otomatis buka Notepad
+        is_empty = not cookie_text or all(line.strip().startswith("#") or not line.strip() for line in cookie_text.splitlines())
+        if is_empty:
+            print("[*] Membuka Notepad 'input_cookie.txt'...")
+            print("[*] Silakan paste teks cookies dari ekstensi browser Anda, lalu simpan (Ctrl+S).")
+            try:
+                os.system(f'notepad.exe "{COOKIE_FILE}"')
+            except Exception:
+                pass
+            input("\nTekan Enter setelah selesai menyimpan cookies di Notepad...")
+
+            if COOKIE_FILE.exists():
+                with open(COOKIE_FILE, "r", encoding="utf-8", errors="ignore") as f:
+                    cookie_text = f.read().strip()
+
+        cookies = parse_cookies_from_text(cookie_text)
+        session_id = cookies.get("sessionid")
+
         if not session_id:
-            print("[x] Cookie sessionid kosong.")
+            print("\n[x] Tidak ditemukan 'sessionid' di input_cookie.txt.")
+            print("    Pastikan Anda sudah login ke instagram.com sebelum mengekspor cookies.")
             return
 
+        print(f"\n[*] Memverifikasi cookies ke server Instagram...")
         loader = instaloader.Instaloader()
-        loader.context._session.cookies.set("sessionid", session_id, domain=".instagram.com")
+        for k, v in cookies.items():
+            loader.context._session.cookies.set(k, v, domain=".instagram.com")
+
         try:
             username = loader.test_login()
             if username:
                 loader.context.username = username
                 loader.save_session_to_file(str(SESSION_FILE))
+                # Juga bagikan sesi ke folder induk agar dapat dipakai tool lain
+                try:
+                    loader.save_session_to_file(str(BASE_DIR.parent / "session.dat"))
+                    with open(BASE_DIR.parent / "session_user.txt", "w", encoding="utf-8") as pf:
+                        pf.write(username)
+                except Exception:
+                    pass
+
                 with open(USER_FILE, "w", encoding="utf-8") as f:
                     f.write(username)
-                print(f"[✓] Berhasil login sebagai @{username}. Sesi disimpan.")
+                print(f"\n[✓] BERHASIL LOGIN sebagai @{username}!")
+                print(f"[✓] Sesi login tersimpan pada: {SESSION_FILE.name}")
+                print("    Akun ini sekarang aktif untuk membuka postingan restricted & privat.")
             else:
-                print("[x] sessionid tidak valid atau sesi sudah expired.")
+                print("\n[x] Cookies tidak valid atau sesi browser telah kedaluwarsa.")
+                print("    Silakan ekspor ulang cookies yang masih aktif dari browser.")
         except Exception as e:
-            print(f"[x] Verifikasi sessionid gagal: {e}")
+            print(f"\n[x] Verifikasi cookies gagal: {e}")
         return
 
     username = input("Username Instagram: ").strip()
@@ -245,16 +297,21 @@ def get_instaloader_instance(save_caption: bool = False):
         filename_pattern="{date_utc:%Y-%m-%d_%H-%M-%S}_{shortcode}",
     )
 
-    if SESSION_FILE.exists() and USER_FILE.exists():
-        try:
-            with open(USER_FILE, "r", encoding="utf-8") as f:
-                saved_user = f.read().strip()
-            if saved_user:
-                loader.load_session_from_file(saved_user, str(SESSION_FILE))
-                print(f"[+] Menggunakan sesi login akun: @{saved_user}")
-                return loader
-        except Exception as e:
-            print(f"[!] Sesi tersimpan tidak dapat dimuat ({e}), beralih ke Mode Tamu.")
+    session_locations = [
+        (SESSION_FILE, USER_FILE),
+        (BASE_DIR.parent / "session.dat", BASE_DIR.parent / "session_user.txt"),
+    ]
+    for s_file, u_file in session_locations:
+        if s_file.exists() and u_file.exists():
+            try:
+                with open(u_file, "r", encoding="utf-8") as f:
+                    saved_user = f.read().strip()
+                if saved_user:
+                    loader.load_session_from_file(saved_user, str(s_file))
+                    print(f"[+] Menggunakan sesi login akun: @{saved_user}")
+                    return loader
+            except Exception as e:
+                print(f"[!] Sesi tersimpan pada {s_file.name} gagal dimuat ({e}).")
 
     print("[+] Berjalan dalam Mode Tamu (Tanpa login)")
     return loader

@@ -1,13 +1,20 @@
 PANDUAN SINGKAT: INSTAGRAM FILTER DOWNLOADER (MULTI-AKUN BATCH)
 =================================================================
 1. Buka BUKA_INPUT_TARGET.bat, isi:
-   - TARGET_AKUN   : username atau link profil (bisa banyak akun, pisahkan koma)
+   - TARGET_AKUN   : username atau link profil (bisa banyak akun, pisahkan koma/spasi)
    - KEYWORDS      : kata kunci yang dicari (pisahkan koma)
+   - HASHTAGS      : tagar yang dicari (opsional, pisahkan koma)
    - MAKSIMAL_POST : batas postingan yang dicek per akun (0 untuk semua)
+   - SIMPAN_CAPTION: ya / tidak (apakah caption disimpan ke file .txt)
 2. Simpan (Ctrl+S), lalu klik 2x JALANKAN_DOWNLOADER.bat.
 3. Skrip akan memproses antrean akun secara berurutan dan menyimpan hasilnya
    ke folder Hasil_Download\<nama_akun>\ masing-masing.
 
+CARA LOGIN MUDAH LEWAT NOTEPAD (UNTUK AKUN PRIVAT / KONTEN SENSITIF):
+1. Buka BUKA_NOTEPAD_LOGIN.bat (membuka berkas input_cookie.txt).
+2. Salin/Export cookies dari ekstensi browser 'Get cookies.txt LOCALLY'.
+3. Paste ke dalam Notepad tersebut, simpan (Ctrl+S), lalu tutup Notepad.
+4. Klik 2x LOGIN_AKUN.bat untuk memverifikasi dan mengaktifkan sesi login!
+
 Troubleshooting:
 - Jika terkena limit (429), aktifkan Mode Pesawat di HP selama 5 detik lalu matikan lagi.
-- Jika akun privat, jalankan LOGIN_AKUN.bat menggunakan akun sekunder.
