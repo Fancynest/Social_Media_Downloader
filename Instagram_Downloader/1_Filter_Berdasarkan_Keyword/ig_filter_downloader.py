@@ -104,11 +104,19 @@ def parse_cookies_from_text(text: str) -> dict:
 
 
 def extract_username(val: str) -> str:
-    s = val.strip().rstrip("/")
+    s = val.strip()
+    if not s or s.startswith("#"):
+        return ""
+    s = s.rstrip("/")
     if "instagram.com/" in s:
+        if s.startswith("#"):
+            return ""
         parts = s.split("instagram.com/")[1].split("?")[0].split("/")
         s = parts[0] if parts else s
-    return s.lstrip("@").strip()
+    s = s.lstrip("@").strip()
+    if not s or s.startswith("#"):
+        return ""
+    return s
 
 
 def read_config():
@@ -123,7 +131,7 @@ def read_config():
     current_key = None
 
     try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        with open(CONFIG_FILE, "r", encoding="utf-8-sig") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith("#"):
@@ -136,9 +144,19 @@ def read_config():
                     val = line
 
                 if current_key == "TARGET_AKUN":
-                    for item in val.replace(",", " ").split():
+                    tokens = [t.strip() for t in val.replace(",", " ").split() if t.strip()]
+                    skip_next = False
+                    for item in tokens:
+                        if item == "#":
+                            skip_next = True
+                            continue
+                        if skip_next:
+                            skip_next = False
+                            continue
+                        if item.startswith("#"):
+                            continue
                         cleaned = extract_username(item)
-                        if cleaned and cleaned not in targets:
+                        if cleaned and not cleaned.startswith("#") and cleaned not in targets:
                             targets.append(cleaned)
                 elif current_key == "KEYWORDS":
                     for item in val.split(","):
@@ -177,9 +195,19 @@ def prompt_user_input():
     while True:
         raw_target = input("  -> Akun Target (bisa 1 atau banyak akun, pisahkan koma/spasi): ").strip()
         targets = []
-        for item in raw_target.replace(",", " ").split():
+        tokens = [t.strip() for t in raw_target.replace(",", " ").split() if t.strip()]
+        skip_next = False
+        for item in tokens:
+            if item == "#":
+                skip_next = True
+                continue
+            if skip_next:
+                skip_next = False
+                continue
+            if item.startswith("#"):
+                continue
             cleaned = extract_username(item)
-            if cleaned and cleaned not in targets:
+            if cleaned and not cleaned.startswith("#") and cleaned not in targets:
                 targets.append(cleaned)
         if targets:
             break
@@ -490,6 +518,9 @@ def main():
     account_summary = []
 
     for acc_idx, target in enumerate(targets, 1):
+        if not target or target.startswith("#"):
+            continue
+
         print("\n" + "=" * 60)
         print(f" [{acc_idx}/{total_accounts}] MEMPROSES TARGET: @{target}")
         print("=" * 60)
