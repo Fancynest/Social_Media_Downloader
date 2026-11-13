@@ -460,8 +460,8 @@ def login_interactive():
             print(f"[x] Gagal login: {e}")
 
 
-def get_instaloader_instance(save_caption: bool = False):
-    loader = instaloader.Instaloader(
+def make_clean_loader(save_caption: bool = False) -> instaloader.Instaloader:
+    return instaloader.Instaloader(
         sleep=False,
         download_pictures=True,
         download_videos=True,
@@ -474,6 +474,8 @@ def get_instaloader_instance(save_caption: bool = False):
         filename_pattern="{date_utc:%Y-%m-%d_%H-%M-%S}_{shortcode}",
     )
 
+
+def get_instaloader_instance(save_caption: bool = False):
     session_locations = [
         (SESSION_FILE, USER_FILE),
         (BASE_DIR.parent / "session.dat", BASE_DIR.parent / "session_user.txt"),
@@ -484,11 +486,12 @@ def get_instaloader_instance(save_caption: bool = False):
                 with open(u_file, "r", encoding="utf-8") as f:
                     saved_user = f.read().strip()
                 if saved_user:
-                    loader.load_session_from_file(saved_user, str(s_file))
-                    logged_user = loader.test_login()
+                    test_ldr = make_clean_loader(save_caption)
+                    test_ldr.load_session_from_file(saved_user, str(s_file))
+                    logged_user = test_ldr.test_login()
                     if logged_user:
                         print(f"[+] Menggunakan sesi login akun: @{logged_user}")
-                        return loader
+                        return test_ldr
                     else:
                         print(f"[!] Sesi login tersimpan (@{saved_user}) telah kedaluwarsa.")
                         print("    Menghapus sesi usang dan beralih ke Mode Tamu...")
@@ -501,7 +504,7 @@ def get_instaloader_instance(save_caption: bool = False):
                 print(f"[!] Sesi tersimpan pada {s_file.name} gagal dimuat ({e}).")
 
     print("[+] Berjalan dalam Mode Tamu (Tanpa login)")
-    return loader
+    return make_clean_loader(save_caption)
 
 
 def main():
