@@ -1,13 +1,17 @@
-# ==============================================================================
-# DAFTAR TAUTAN MEDIA (FOTO & VIDEO) YANG INGIN DIUNDUH (X / TWITTER & LAINNYA)
-# ==============================================================================
-# Petunjuk Pengisian:
-# 1. Tempelkan (paste) semua tautan postingan di bawah ini (satu tautan per baris).
-# 2. Mendukung postingan VIDEO maupun FOTO (termasuk 1 s/d 4 foto sekaligus).
-# 3. Contoh format tautan:
-#    https://x.com/username/status/1234567890123456789
-# 4. Baris yang diawali dengan tanda '#' akan diabaikan oleh sistem.
-# 5. Setelah selesai menempelkan tautan, simpan berkas (CTRL + S), lalu tutup Notepad.
-# 6. Klik 2x berkas "DOWNLOAD_SEKARANG.bat" untuk memulai pengunduhan!
-# ==============================================================================
+# =====================================================================
+# PENGATURAN RENTANG WAKTU (OPSIONAL):
+# Format tanggal: YYYY-MM-DD (Contoh: DARI_TANGGAL=2026-01-01)
+# Kosongkan jika ingin mengunduh SEMUA media tanpa batas waktu.
+# =====================================================================
+DARI_TANGGAL=
+SAMPAI_TANGGAL=
 
+# =====================================================================
+# DAFTAR TAUTAN (POSTINGAN SATUAN ATAU PROFIL AKUN LENGKAP):
+# Aturan:
+# 1. Satu tautan per baris.
+# 2. Mendukung:
+#    - Postingan Satuan : https://x.com/username/status/123456789
+#    - Akun Profil      : https://x.com/username atau @username (Unduh Semua Media)
+# 3. Baris yang diawali tanda pagar (#) akan diabaikan.
+# =====================================================================

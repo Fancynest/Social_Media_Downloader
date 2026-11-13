@@ -1,20 +1,22 @@
-PANDUAN SINGKAT: INSTAGRAM FILTER DOWNLOADER (MULTI-AKUN BATCH)
-=================================================================
-1. Buka BUKA_INPUT_TARGET.bat, isi:
-   - TARGET_AKUN   : username atau link profil (bisa banyak akun, pisahkan koma/spasi)
-   - KEYWORDS      : kata kunci yang dicari (pisahkan koma)
-   - HASHTAGS      : tagar yang dicari (opsional, pisahkan koma)
-   - MAKSIMAL_POST : batas postingan yang dicek per akun (0 untuk semua)
-   - SIMPAN_CAPTION: ya / tidak (apakah caption disimpan ke file .txt)
-2. Simpan (Ctrl+S), lalu klik 2x JALANKAN_DOWNLOADER.bat.
-3. Skrip akan memproses antrean akun secara berurutan dan menyimpan hasilnya
-   ke folder Hasil_Download\<nama_akun>\ masing-masing.
+PANDUAN SINGKAT: INSTAGRAM MEDIA DOWNLOADER
+============================================================
+1. Buka BUKA_INPUT_TARGET.bat (input_target.txt).
+2. Tentukan pengaturan:
+   - TARGET_AKUN   : Masukkan 1 atau banyak tautan / username akun target.
+   - DARI_TANGGAL  : Batas tanggal awal (format: YYYY-MM-DD, contoh: 2026-01-01).
+                     (Kosongkan jika ingin mengunduh tanpa batas awal).
+   - SAMPAI_TANGGAL: Batas tanggal akhir (format: YYYY-MM-DD, contoh: 2026-12-31).
+                     (Kosongkan jika ingin mengunduh hingga postingan terbaru).
+   - KEYWORDS      : Kata kunci caption (KOSONGKAN jika ingin mengunduh SEMUA postingan).
+   - HASHTAGS      : Tagar caption (KOSONGKAN jika ingin mengunduh SEMUA postingan).
+   - MAKSIMAL_POST : Batas post per akun (isi 0 untuk semua postingan).
+   - SIMPAN_CAPTION: ya / tidak (default: tidak).
+3. Simpan file (Ctrl+S), lalu klik 2x JALANKAN_DOWNLOADER.bat.
+4. Media hasil unduhan akan tersimpan di folder Hasil_Download\<username>\.
 
-CARA LOGIN MUDAH LEWAT NOTEPAD (UNTUK AKUN PRIVAT / KONTEN SENSITIF):
-1. Buka BUKA_NOTEPAD_LOGIN.bat (membuka berkas input_cookie.txt).
-2. Salin/Export cookies dari ekstensi browser 'Get cookies.txt LOCALLY'.
-3. Paste ke dalam Notepad tersebut, simpan (Ctrl+S), lalu tutup Notepad.
-4. Klik 2x LOGIN_AKUN.bat untuk memverifikasi dan mengaktifkan sesi login!
-
-Troubleshooting:
-- Jika terkena limit (429), aktifkan Mode Pesawat di HP selama 5 detik lalu matikan lagi.
+Tips & Fitur Login:
+- Mendukung download SEMUA postingan akun target secara otomatis.
+- Mendukung filter rentang waktu tertentu.
+- Jika akun target privat atau dibatasi usia/sensitif, jalankan LOGIN_AKUN.bat
+  atau BUKA_NOTEPAD_LOGIN.bat untuk memasukkan sesi cookies Instagram Anda.
+============================================================

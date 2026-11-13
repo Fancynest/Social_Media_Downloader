@@ -1,10 +1,16 @@
 PANDUAN SINGKAT: YOUTUBE MEDIA DOWNLOADER
 ============================================================
 1. Buka BUKA_NOTEPAD_LINK.bat.
-2. Tempelkan tautan video YouTube (1 tautan per baris).
-   - Mendukung video standar, YouTube Shorts, maupun Playlist.
-3. Simpan (Ctrl+S), lalu klik 2x DOWNLOAD_SEKARANG.bat.
-4. Media hasil unduhan akan tersimpan di folder Hasil_Download\.
+2. Tentukan rentang waktu (opsional) pada bagian atas:
+   - DARI_TANGGAL=2026-01-01
+   - SAMPAI_TANGGAL=2026-12-31
+   (Kosongkan jika ingin mengunduh SEMUA video tanpa batas waktu).
+3. Tempelkan tautan YouTube (1 tautan per baris).
+   - Video Satuan  : https://www.youtube.com/watch?v=... atau Shorts
+   - Playlist      : https://www.youtube.com/playlist?list=...
+   - Channel/Akun  : https://www.youtube.com/@NamaChannel (Unduh Semua Video Channel)
+4. Simpan (Ctrl+S), lalu klik 2x DOWNLOAD_SEKARANG.bat.
+5. Media hasil unduhan akan tersimpan di folder Hasil_Download\.
 
 Fitur & Solusi Video Batasan Usia (Age-Restricted / 18+):
 - Otomatis mengambil video dan audio dengan resolusi terbaik (1080p / 2K / 4K).

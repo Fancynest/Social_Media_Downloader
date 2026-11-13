@@ -1,17 +1,24 @@
 PANDUAN SINGKAT: X (TWITTER) MEDIA DOWNLOADER
-==============================================
+============================================================
 1. Buka BUKA_NOTEPAD_LINK.bat.
-2. Tempelkan link postingan X/Twitter (1 link per baris).
-   - Mendukung postingan VIDEO maupun FOTO (1 s/d 4 foto).
-3. Simpan (Ctrl+S), lalu klik 2x DOWNLOAD_SEKARANG.bat.
-4. Media hasil unduhan akan tersimpan di folder Hasil_Download\.
+2. Tentukan rentang waktu (opsional) pada bagian atas:
+   - DARI_TANGGAL=2026-01-01
+   - SAMPAI_TANGGAL=2026-12-31
+   (Kosongkan jika ingin mengunduh SEMUA media tanpa batas waktu).
+3. Tempelkan tautan X/Twitter (1 tautan per baris).
+   - Postingan Satuan : https://x.com/username/status/123456789
+   - Akun Profil      : https://x.com/username atau @username (Unduh Semua Media Akun)
+4. Simpan (Ctrl+S), lalu klik 2x DOWNLOAD_SEKARANG.bat.
+5. Media hasil unduhan akan tersimpan di folder Hasil_Download\.
 
 Fitur & Solusi Konten Sensitif:
 - Otomatis mengambil foto dengan resolusi asli (original).
 - Otomatis mengambil video dengan kualitas/bitrate tertinggi.
+- Mendukung pengunduhan massal seluruh media dari profil akun.
 - Otomatis melewati media yang sudah pernah diunduh sebelumnya.
 - Jika ada postingan bertanda SENSITIF / 18+:
   a. Buka x.com -> Settings -> Privacy and safety -> Content you see -> Centang "Display media that may contain sensitive content".
-  b. Ekspor cookies x.com menggunakan ekstensi "Get cookies.txt LOCALLY".
-  c. Klik BUKA_NOTEPAD_COOKIE.bat dan paste cookies di sana.
+  b. Salin cookies x.com menggunakan ekstensi "Get cookies.txt LOCALLY" atau dari Network headers.
+  c. Klik BUKA_NOTEPAD_COOKIE.bat dan tempelkan (Ctrl+V) cookies di sana.
   d. Jalankan DOWNLOAD_SEKARANG.bat. Media sensitif akan langsung terunduh!
+============================================================

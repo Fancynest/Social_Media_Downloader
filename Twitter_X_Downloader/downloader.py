@@ -7,6 +7,8 @@ import json
 import shutil
 import urllib.request
 import subprocess
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 if sys.platform == "win32":
@@ -50,6 +52,28 @@ def clean_url(raw_url: str) -> str:
     return url
 
 
+def is_twitter_profile(raw_url: str) -> str | None:
+    cleaned = raw_url.strip()
+    if cleaned.startswith("@"):
+        return cleaned.lstrip("@").strip("/")
+    m = re.match(r'https?://(?:www\.)?(?:x|twitter)\.com/([a-zA-Z0-9_]{1,30})/?$', cleaned)
+    if m and m.group(1).lower() not in ("home", "explore", "notifications", "messages", "settings", "search", "i"):
+        return m.group(1)
+    m2 = re.match(r'https?://(?:www\.)?(?:x|twitter)\.com/([a-zA-Z0-9_]{1,30})/media/?$', cleaned)
+    if m2:
+        return m2.group(1)
+    return None
+
+
+def parse_date_str(val: str) -> str:
+    cleaned = re.sub(r"[^\d]", "", val.strip())
+    if len(cleaned) == 8:
+        return f"{cleaned[:4]}-{cleaned[4:6]}-{cleaned[6:]}"
+    if len(val.strip()) == 10 and val.strip()[4] == "-" and val.strip()[7] == "-":
+        return val.strip()
+    return ""
+
+
 def load_archive() -> set:
     if not ARCHIVE_FILE.exists():
         return set()
@@ -62,22 +86,38 @@ def add_to_archive(item_id: str):
         f.write(f"{item_id}\n")
 
 
-def load_links():
+def load_links_and_settings():
     if not TXT_FILE.exists():
         with open(TXT_FILE, "w", encoding="utf-8") as f:
             f.write("# Tempelkan tautan video atau foto di sini (1 per baris):\n")
-        return []
+        return [], "", ""
 
     links = []
+    dari_tanggal = ""
+    sampai_tanggal = ""
+
     with open(TXT_FILE, "r", encoding="utf-8", errors="ignore") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#") or line.startswith("//"):
                 continue
+
+            if "=" in line:
+                k, v = line.split("=", 1)
+                k_clean = k.strip().upper()
+                v_clean = v.strip()
+                if k_clean == "DARI_TANGGAL":
+                    dari_tanggal = parse_date_str(v_clean)
+                    continue
+                elif k_clean == "SAMPAI_TANGGAL":
+                    sampai_tanggal = parse_date_str(v_clean)
+                    continue
+
             cleaned = clean_url(line)
-            if cleaned.startswith("http://") or cleaned.startswith("https://"):
+            if cleaned.startswith("http://") or cleaned.startswith("https://") or cleaned.startswith("@"):
                 links.append(cleaned)
-    return links
+
+    return links, dari_tanggal, sampai_tanggal
 
 
 def download_file_direct(url: str, dest: Path, label: str = "Media") -> bool:
@@ -119,7 +159,7 @@ def download_file_direct(url: str, dest: Path, label: str = "Media") -> bool:
         return False
 
 
-def try_download_twitter_api(url: str, archive_set: set) -> bool:
+def try_download_twitter_api(url: str, archive_set: set, dari_tgl: str = "", sampai_tgl: str = "") -> bool:
     match = re.search(r'(?:x|twitter)\.com/(?:#!/)?(\w+)/status/(\d+)', url)
     if not match:
         return False
@@ -144,6 +184,21 @@ def try_download_twitter_api(url: str, archive_set: set) -> bool:
                 data = json.loads(resp.read().decode("utf-8", errors="ignore"))
 
             tweet = data.get("tweet", {})
+
+            # Cek rentang tanggal tweet
+            created_at = tweet.get("created_at")
+            if created_at and (dari_tgl or sampai_tgl):
+                try:
+                    dt = parsedate_to_datetime(created_at).date()
+                    if dari_tgl and str(dt) < dari_tgl:
+                        print(f"  [-] Tweet tanggal {dt} lebih lama dari {dari_tgl}, dilewati.")
+                        return True
+                    if sampai_tgl and str(dt) > sampai_tgl:
+                        print(f"  [-] Tweet tanggal {dt} lebih baru dari {sampai_tgl}, dilewati.")
+                        return True
+                except Exception:
+                    pass
+
             media = tweet.get("media", {})
             videos = media.get("videos", [])
             photos = media.get("photos", [])
@@ -204,12 +259,28 @@ def prepare_clean_cookie_file() -> Path | None:
     if not COOKIE_FILE.exists() or COOKIE_FILE.stat().st_size < 10:
         return None
     try:
-        text = COOKIE_FILE.read_text(encoding="utf-8", errors="ignore")
-        idx = text.find("# Netscape")
-        if idx != -1:
-            clean_content = text[idx:].strip() + "\n"
+        text = COOKIE_FILE.read_text(encoding="utf-8", errors="ignore").strip()
+        lines = [l for l in text.splitlines() if l.strip() and not l.strip().startswith("#")]
+        if not lines:
+            return None
+
+        if any("\t" in l for l in lines) or any("# netscape" in l.lower() for l in text.splitlines()):
+            idx = text.find("# Netscape")
+            clean_content = (text[idx:] if idx != -1 else "# Netscape HTTP Cookie File\n" + text).strip() + "\n"
         else:
-            clean_content = "# Netscape HTTP Cookie File\n" + text.strip() + "\n"
+            cookie_str = text
+            if cookie_str.lower().startswith("cookie:"):
+                cookie_str = cookie_str[7:].strip()
+            tokens = [t.strip() for t in cookie_str.replace("\n", ";").split(";") if t.strip()]
+            entries = []
+            for token in tokens:
+                if "=" in token:
+                    k, v = token.split("=", 1)
+                    k, v = k.strip(), v.strip()
+                    if k and not k.startswith("#"):
+                        entries.append(f".x.com\tTRUE\t/\tTRUE\t2147483647\t{k}\t{v}")
+                        entries.append(f".twitter.com\tTRUE\t/\tTRUE\t2147483647\t{k}\t{v}")
+            clean_content = "# Netscape HTTP Cookie File\n" + "\n".join(entries) + "\n" if entries else ("# Netscape HTTP Cookie File\n" + text + "\n")
 
         clean_path = BASE_DIR / ".cookies_active.txt"
         clean_path.write_text(clean_content, encoding="utf-8")
@@ -218,7 +289,44 @@ def prepare_clean_cookie_file() -> Path | None:
         return COOKIE_FILE if COOKIE_FILE.exists() else None
 
 
-def try_download_ytdlp(url: str) -> bool:
+def download_twitter_profile(username: str, dari_tgl: str, sampai_tgl: str, clean_cookie: Path | None) -> bool:
+    print(f"  [*] Mode Profil: Mengunduh semua media dari @{username}...")
+    user_out = OUTPUT_DIR / username
+    user_out.mkdir(parents=True, exist_ok=True)
+
+    cmd = [
+        sys.executable, "-m", "gallery_dl",
+        "--directory", str(user_out),
+        "--download-archive", str(ARCHIVE_FILE),
+        "-o", "filename={username}_{tweet_id}_{num}.{extension}",
+        "--no-mtime",
+    ]
+
+    if clean_cookie and clean_cookie.exists():
+        cmd.extend(["--cookies", str(clean_cookie)])
+
+    filter_conds = []
+    if dari_tgl:
+        filter_conds.append(f"date >= '{dari_tgl}'")
+    if sampai_tgl:
+        filter_conds.append(f"date <= '{sampai_tgl}'")
+
+    if filter_conds:
+        cond_str = " and ".join(filter_conds)
+        cmd.extend(["--filter", cond_str])
+        print(f"  [+] Filter Aktif : {cond_str}")
+
+    cmd.append(f"https://x.com/{username}/media")
+
+    try:
+        res = subprocess.run(cmd)
+        return res.returncode == 0
+    except Exception as e:
+        print(f"  [x] Error saat mengunduh profil @{username}: {e}")
+        return False
+
+
+def try_download_ytdlp(url: str, dari_tgl: str = "", sampai_tgl: str = "") -> bool:
     ytdlp_bin = find_ytdlp()
     output_template = str(OUTPUT_DIR / "%(uploader)s_%(id)s_%(title).50s.%(ext)s")
     cmd = [
@@ -233,6 +341,11 @@ def try_download_ytdlp(url: str) -> bool:
         "--merge-output-format", "mp4",
         "-o", output_template,
     ]
+
+    if dari_tgl:
+        cmd.extend(["--dateafter", dari_tgl.replace("-", "")])
+    if sampai_tgl:
+        cmd.extend(["--datebefore", sampai_tgl.replace("-", "")])
 
     clean_cookie = prepare_clean_cookie_file()
     if clean_cookie and clean_cookie.exists():
@@ -249,50 +362,72 @@ def try_download_ytdlp(url: str) -> bool:
 
 def run_download():
     print("=" * 60)
-    print(" MASS MEDIA DOWNLOADER (X / TWITTER & ALL SITES)")
+    print("      X / TWITTER MASS MEDIA DOWNLOADER (HD / ORIG)")
+    print("=" * 60)
+    print(" Format   : Foto Resolusi Asli & Video Bitrate Maksimal")
+    print(" Dukungan : Postingan Satuan & Full Profil Akun (@)")
     print("=" * 60)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     archive_set = load_archive()
 
-    has_cookie = COOKIE_FILE.exists() and COOKIE_FILE.stat().st_size > 10
-    if has_cookie:
-        print("[+] Cookies aktif: 'input_cookie.txt' dimuat (Bypass konten sensitif & 18+)")
-    else:
-        print("[i] Berjalan dalam Mode Tamu (Tanpa cookies)")
-        print("    Tips: Jika ada konten sensitif/18+ yang gagal diunduh, ekspor cookies")
-        print("    dari x.com ke berkas 'input_cookie.txt' (klik BUKA_NOTEPAD_COOKIE.bat).")
+    clean_cookie = prepare_clean_cookie_file()
+    has_cookie = clean_cookie is not None and clean_cookie.exists()
 
-    links = load_links()
+    if has_cookie:
+        print("[+] Cookies aktif : 'input_cookie.txt' dimuat (Bypass batasan usia & sensitif)")
+    else:
+        print("[i] Mode Tamu     : Berjalan tanpa cookies")
+        print("    Tips: Jika ada konten sensitif/18+ atau profil yang gagal diunduh,")
+        print("    tempelkan cookies ke 'input_cookie.txt' (klik BUKA_NOTEPAD_COOKIE.bat).")
+
+    links, dari_tgl, sampai_tgl = load_links_and_settings()
+
+    if dari_tgl or sampai_tgl:
+        t_dari = dari_tgl if dari_tgl else "Awal"
+        t_sampai = sampai_tgl if sampai_tgl else "Sekarang"
+        print(f"[+] Rentang Waktu : {t_dari} s/d {t_sampai}")
+    else:
+        print("[+] Rentang Waktu : Semua Media (Tanpa Batas Tanggal)")
+
     if not links:
-        print(f"[!] '{TXT_FILE.name}' masih kosong atau belum ada link valid.")
+        print(f"\n[!] '{TXT_FILE.name}' masih kosong atau belum ada tautan valid.")
         print("[*] Silakan isi tautan ke berkas tersebut lalu simpan (Ctrl+S).")
         try:
             os.system(f'notepad.exe "{TXT_FILE}"')
         except Exception:
             pass
         input("\nTekan Enter setelah selesai mengisi tautan...")
-        links = load_links()
+        links, dari_tgl, sampai_tgl = load_links_and_settings()
         if not links:
             print("[!] Tidak ada tautan untuk diproses.")
             return
 
-    print(f" Folder Simpan : {OUTPUT_DIR}")
-    print(f" Total Tautan  : {len(links)}\n")
+    print(f"\n Folder Simpan : {OUTPUT_DIR}")
+    print(f" Total Target  : {len(links)}\n")
 
     success_count, fail_count = 0, 0
 
     for idx, url in enumerate(links, 1):
         print("-" * 60)
         print(f"[{idx}/{len(links)}] Memproses: {url}")
+
+        profile_user = is_twitter_profile(url)
+        if profile_user:
+            if download_twitter_profile(profile_user, dari_tgl, sampai_tgl, clean_cookie):
+                success_count += 1
+            else:
+                fail_count += 1
+            continue
+
         is_twitter = ("x.com" in url) or ("twitter.com" in url)
         downloaded = False
 
         if is_twitter:
-            downloaded = try_download_twitter_api(url, archive_set)
+            downloaded = try_download_twitter_api(url, archive_set, dari_tgl, sampai_tgl)
 
         if not downloaded:
             print("  [*] Mencoba unduh via yt-dlp engine...")
-            downloaded = try_download_ytdlp(url)
+            downloaded = try_download_ytdlp(url, dari_tgl, sampai_tgl)
 
         if downloaded:
             success_count += 1
@@ -301,7 +436,7 @@ def run_download():
             fail_count += 1
 
     print("\n" + "=" * 60)
-    print(" RINGKASAN PENGUNDUHAN")
+    print("                    RINGKASAN PENGUNDUHAN")
     print("=" * 60)
     print(f" Total Diproses : {len(links)}")
     print(f" Berhasil       : {success_count}")

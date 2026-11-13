@@ -119,6 +119,17 @@ def extract_username(val: str) -> str:
     return s
 
 
+def parse_date_filter(val: str):
+    cleaned = re.sub(r"[^\d]", "", val.strip())
+    if len(cleaned) == 8:
+        try:
+            from datetime import datetime
+            return datetime.strptime(cleaned, "%Y%m%d").date()
+        except Exception:
+            return None
+    return None
+
+
 def read_config():
     if not CONFIG_FILE.exists():
         return None
@@ -126,6 +137,8 @@ def read_config():
     targets = []
     keywords = []
     hashtags = []
+    dari_tanggal = None
+    sampai_tanggal = None
     max_posts = 50
     save_caption = False
     current_key = None
@@ -158,6 +171,10 @@ def read_config():
                         cleaned = extract_username(item)
                         if cleaned and not cleaned.startswith("#") and cleaned not in targets:
                             targets.append(cleaned)
+                elif current_key == "DARI_TANGGAL":
+                    dari_tanggal = parse_date_filter(val)
+                elif current_key == "SAMPAI_TANGGAL":
+                    sampai_tanggal = parse_date_filter(val)
                 elif current_key == "KEYWORDS":
                     for item in val.split(","):
                         k_clean = item.strip().lower()
@@ -180,14 +197,15 @@ def read_config():
     except Exception as e:
         print(f"[!] Gagal membaca {CONFIG_FILE.name}: {e}")
 
-    has_filter = bool(keywords or hashtags)
     return {
         "targets": targets,
         "keywords": keywords,
         "hashtags": hashtags,
+        "dari_tanggal": dari_tanggal,
+        "sampai_tanggal": sampai_tanggal,
         "max_posts": max_posts,
         "save_caption": save_caption,
-    } if (targets and has_filter) else None
+    } if targets else None
 
 
 def prompt_user_input():
@@ -213,21 +231,21 @@ def prompt_user_input():
             break
         print("     [!] Masukkan minimal satu username / link akun yang valid.")
 
-    while True:
-        raw_kw = input("  -> Kata Kunci / Keywords (pisahkan koma): ").strip()
-        keywords = [k.strip().lower() for k in raw_kw.split(",") if k.strip()]
-        raw_ht = input("  -> Tagar / Hashtags (opsional, pisahkan koma, contoh #tag1, #tag2): ").strip()
-        hashtags = []
-        for item in raw_ht.split(","):
-            h = item.strip().lower()
-            if h:
-                tag = h if h.startswith("#") else f"#{h}"
-                if tag not in hashtags:
-                    hashtags.append(tag)
+    raw_dari = input("  -> Batas Tanggal Awal (YYYY-MM-DD, kosongkan jika tanpa batas): ").strip()
+    dari_tanggal = parse_date_filter(raw_dari)
+    raw_sampai = input("  -> Batas Tanggal Akhir (YYYY-MM-DD, kosongkan jika tanpa batas): ").strip()
+    sampai_tanggal = parse_date_filter(raw_sampai)
 
-        if keywords or hashtags:
-            break
-        print("     [!] Masukkan minimal satu kata kunci atau tagar.")
+    raw_kw = input("  -> Kata Kunci / Keywords (opsional, kosongkan untuk unduh SEMUA): ").strip()
+    keywords = [k.strip().lower() for k in raw_kw.split(",") if k.strip()]
+    raw_ht = input("  -> Tagar / Hashtags (opsional, kosongkan untuk unduh SEMUA): ").strip()
+    hashtags = []
+    for item in raw_ht.split(","):
+        h = item.strip().lower()
+        if h:
+            tag = h if h.startswith("#") else f"#{h}"
+            if tag not in hashtags:
+                hashtags.append(tag)
 
     raw_max = input("  -> Maksimal postingan per akun (Enter untuk default 50, atau 0 untuk semua): ").strip()
     try:
@@ -244,6 +262,8 @@ def prompt_user_input():
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 f.write(
                     "# Pengaturan Target Download Instagram\n"
+                    f"DARI_TANGGAL={dari_tanggal.strftime('%Y-%m-%d') if dari_tanggal else ''}\n"
+                    f"SAMPAI_TANGGAL={sampai_tanggal.strftime('%Y-%m-%d') if sampai_tanggal else ''}\n"
                     f"TARGET_AKUN={', '.join(targets)}\n"
                     f"KEYWORDS={', '.join(keywords)}\n"
                     f"HASHTAGS={', '.join(hashtags)}\n"
@@ -258,6 +278,8 @@ def prompt_user_input():
         "targets": targets,
         "keywords": keywords,
         "hashtags": hashtags,
+        "dari_tanggal": dari_tanggal,
+        "sampai_tanggal": sampai_tanggal,
         "max_posts": max_posts,
         "save_caption": save_caption,
     }
@@ -483,7 +505,7 @@ def main():
         return
 
     print("=" * 60)
-    print(" INSTAGRAM DOWNLOADER - FILTER KEYWORD & HASHTAG (BATCH)")
+    print(" INSTAGRAM MEDIA DOWNLOADER (PROFILE / FILTER / RENTANG WAKTU)")
     print("=" * 60)
 
     config = read_config()
@@ -491,10 +513,20 @@ def main():
         print(f"[*] Ditemukan {len(config['targets'])} akun target di input_target.txt:")
         for t in config['targets']:
             print(f"    - @{t}")
+        if config.get('dari_tanggal') or config.get('sampai_tanggal'):
+            t_dari = str(config['dari_tanggal']) if config['dari_tanggal'] else 'Awal'
+            t_sampai = str(config['sampai_tanggal']) if config['sampai_tanggal'] else 'Sekarang'
+            print(f"[*] Rentang Waktu : {t_dari} s/d {t_sampai}")
+        else:
+            print("[*] Rentang Waktu : Semua Postingan (Tanpa Batas Tanggal)")
+
         if config['keywords']:
             print(f"[*] Kata Kunci    : {', '.join(config['keywords'])}")
         if config['hashtags']:
             print(f"[*] Tagar/Hashtags: {', '.join(config['hashtags'])}")
+        if not config['keywords'] and not config['hashtags']:
+            print("[*] Mode Unduh    : SEMUA Postingan (Tanpa Filter Kata Kunci)")
+
         print(f"[*] Batas Per Akun: {config['max_posts'] if config['max_posts'] > 0 else 'Semua postingan'}")
         print(f"[*] Simpan Caption: {'Ya (.txt)' if config.get('save_caption') else 'Tidak (Hanya Foto/Video)'}")
         pilihan = input("\nGunakan pengaturan ini? (Y/n / ketik 'b' untuk input baru): ").strip().lower()
@@ -506,6 +538,8 @@ def main():
     targets = config["targets"]
     keywords = config["keywords"]
     hashtags = config["hashtags"]
+    dari_tanggal = config.get("dari_tanggal")
+    sampai_tanggal = config.get("sampai_tanggal")
     max_posts = config["max_posts"]
     save_caption = config.get("save_caption", False)
 
@@ -567,22 +601,41 @@ def main():
                 if preview:
                     print(f"    Caption: \"{preview}...\"")
 
-                # Cocokkan kata kunci dan tagar
-                hit_keywords = [k for k in keywords if k in cap_lower]
-                hit_hashtags = [h for h in hashtags if h in cap_lower]
-                all_hits = hit_keywords + hit_hashtags
+                # Filter rentang waktu
+                post_dt = post.date_local.date()
+                if sampai_tanggal and post_dt > sampai_tanggal:
+                    print(f"    [-] Tanggal postingan ({post_dt}) lebih baru dari batas {sampai_tanggal}, dilewati.")
+                    print("-" * 60)
+                    continue
 
-                if all_hits:
+                if dari_tanggal and post_dt < dari_tanggal:
+                    print(f"    [*] Tanggal postingan ({post_dt}) melewati batas awal {dari_tanggal}. Selesai untuk target @{target}.")
+                    print("-" * 60)
+                    break
+
+                # Cocokkan kata kunci dan tagar (atau unduh semua jika kosong)
+                has_filter = bool(keywords or hashtags)
+                if not has_filter:
+                    is_match = True
+                    match_msg = "Semua Postingan"
+                else:
+                    hit_keywords = [k for k in keywords if k in cap_lower]
+                    hit_hashtags = [h for h in hashtags if h in cap_lower]
+                    all_hits = hit_keywords + hit_hashtags
+                    is_match = bool(all_hits)
+                    match_msg = f"Cocok ({', '.join(all_hits)})"
+
+                if is_match:
                     matched += 1
                     global_matched += 1
-                    print(f"    >>> Cocok ({', '.join(all_hits)}). Mengunduh...")
+                    print(f"    >>> {match_msg}. Mengunduh...")
                     try:
                         loader.download_post(post, target=out_dir)
                         print("    [✓] Berhasil diunduh.")
                     except Exception as dl_err:
                         print(f"    [!] Error saat mengunduh: {dl_err}")
                 else:
-                    print("    [-] Tidak cocok, dilewati.")
+                    print("    [-] Tidak cocok dengan filter kata kunci, dilewati.")
 
                 print("-" * 60)
 
