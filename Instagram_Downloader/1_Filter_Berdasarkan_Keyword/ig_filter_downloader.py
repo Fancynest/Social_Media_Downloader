@@ -485,8 +485,18 @@ def get_instaloader_instance(save_caption: bool = False):
                     saved_user = f.read().strip()
                 if saved_user:
                     loader.load_session_from_file(saved_user, str(s_file))
-                    print(f"[+] Menggunakan sesi login akun: @{saved_user}")
-                    return loader
+                    logged_user = loader.test_login()
+                    if logged_user:
+                        print(f"[+] Menggunakan sesi login akun: @{logged_user}")
+                        return loader
+                    else:
+                        print(f"[!] Sesi login tersimpan (@{saved_user}) telah kedaluwarsa.")
+                        print("    Menghapus sesi usang dan beralih ke Mode Tamu...")
+                        try:
+                            s_file.unlink()
+                            u_file.unlink()
+                        except Exception:
+                            pass
             except Exception as e:
                 print(f"[!] Sesi tersimpan pada {s_file.name} gagal dimuat ({e}).")
 
@@ -564,6 +574,11 @@ def main():
 
         try:
             profile = instaloader.Profile.from_username(loader.context, target)
+            full_name = getattr(profile, "full_name", target)
+            try:
+                media_count = profile.mediacount
+            except Exception:
+                media_count = "Tersedia"
         except ProfileNotExistsException:
             print(f"[x] Akun @{target} tidak ditemukan. Melewati ke target berikutnya...")
             account_summary.append({"account": target, "scanned": 0, "matched": 0, "status": "Tidak ditemukan"})
@@ -573,12 +588,17 @@ def main():
             account_summary.append({"account": target, "scanned": 0, "matched": 0, "status": "Perlu login"})
             continue
         except Exception as e:
-            print(f"[x] Gagal mengakses profil @{target}: {e}")
+            err_str = str(e)
+            if "401" in err_str or "wait a few minutes" in err_str or "429" in err_str:
+                print(f"[!] Akses profil @{target} dibatasi sementara oleh Instagram (Rate Limit / 401).")
+                print("    Tips: Nyalakan Mode Pesawat di HP selama 5 detik lalu matikan lagi untuk ganti IP.")
+            else:
+                print(f"[x] Gagal mengakses profil @{target}: {e}")
             account_summary.append({"account": target, "scanned": 0, "matched": 0, "status": "Error akses"})
             continue
 
-        print(f"[+] Nama Akun      : {profile.full_name} (@{profile.username})")
-        print(f"[+] Total Postingan: {profile.mediacount}")
+        print(f"[+] Nama Akun      : {full_name} (@{target})")
+        print(f"[+] Total Postingan: {media_count}")
         print(f"[+] Folder Simpan  : {out_dir}")
         print("-" * 60)
 
