@@ -11,18 +11,19 @@
 # ==============================================================================
 
 TARGET_AKUN=
-https://www.instagram.com/khitanlampung/
-https://www.instagram.com/tabebarigas_homecare/
-https://www.instagram.com/klinik_am_medika/
-https://www.instagram.com/khitananberkahgratis23/
-https://www.instagram.com/sunatmodernsatria/
-https://www.instagram.com/rumahsunatdokterai/
-https://www.instagram.com/sunat_sehat_samarinda/
-https://www.instagram.com/rumahsunatpremium/
-https://www.instagram.com/sunat_modern_palu/
-https://www.instagram.com/gohokhitanmodern/
+#https://www.instagram.com/rumahsunathoky/
+#https://www.instagram.com/rumahsunatomar/
+#https://www.instagram.com/klinik.alaqsha/
+#https://www.instagram.com/rumahsunatavicenna/
+#https://www.instagram.com/rumahsunatazazi/
+https://www.instagram.com/sunat_ring_pontianak/
+https://www.instagram.com/pusat_sunatmodern_padang/
+https://www.instagram.com/rumah_sunat_ananta/
+https://www.instagram.com/sunat_tanahgrogot/
+https://www.instagram.com/sunatmodernsuperbotpekanbaru/
 
-KEYWORDS=sunat dewasa, sunatdewasa, khitan dewasa, khitandewasa, khitanmualaf, khitan mualaf, khitanmuallaf, khitan muallaf, sunat mualaf, sunatmualaf, sunat muallaf, sunatmuallaf, pria dewasa, pasien dewasa, khitan pria, sunat pria, koh, koko, tn, mr, mr.x, mualaf, muallaf, saudarabaru, saudara baru, saudara seiman, saudara kita, bersyahadat, syahadat, masuk islam, hidayah, hijrah, om, abang, bapak, mas, china, tiongkok, tionghoa, chindo
+
+KEYWORDS=sunat dewasa, sunatdewasa, khitan dewasa, khitandewasa, khitanmualaf, khitan mualaf, khitanmuallaf, khitan muallaf, sunat mualaf, sunatmualaf, sunat muallaf, sunatmuallaf, pria dewasa, pasien dewasa, koh, koko, mr, mr.x, mualaf, muallaf, saudarabaru, saudara baru, saudara seiman, saudara kita, bersyahadat, syahadat, masuk islam, hidayah, hijrah, bapak, china, tiongkok, tionghoa, chindo, abang
 
 HASHTAGS=#sunatdewasa, #khitandewasa, #sunatmualaf, #khitanmualaf, #sunatmuallaf, #khitanmuallaf, #sunatdewasamodern, #khitandewasamodern, #sunatdewasatanpasakit, #mualaf, #muallaf, #mualafcenterindonesia, #khitanpria, #sunatpria, #hijrah, #masukislam
 

@@ -1,0 +1,26 @@
+======================================================================
+              PANDUAN PENGGUNAAN THISVID VIDEO DOWNLOADER
+======================================================================
+
+CARA CEPAT PAKAI:
+----------------------------------------------------------------------
+1. Klik 2x file "BUKA_NOTEPAD_LINK.bat".
+2. Tempelkan semua tautan video ThisVid yang ingin kamu unduh (1 baris 1 link).
+3. Simpan file teks tersebut (Ctrl + S), lalu tutup Notepad.
+4. Klik 2x file "DOWNLOAD_SEKARANG.bat".
+5. Program akan otomatis mengunduh seluruh video dengan resolusi terbaik.
+6. Setelah selesai, folder "Hasil_Download" akan otomatis terbuka!
+
+FITUR UTAMA:
+----------------------------------------------------------------------
+* Batch Download   : Unduh puluhan link video sekaligus dalam sekali jalan.
+* Kualitas Terbaik : Otomatis memilih resolusi dan bitrate video tertinggi.
+* Auto Merge MP4   : Menggabungkan streaming video & audio otomatis menjadi MP4.
+* Anti-Duplikat    : Video yang sudah pernah berhasil diunduh tidak akan diunduh
+                     ulang (hemat kuota & waktu).
+* Dukungan Cookies : Jika ada video khusus member / butuh login:
+                     - Klik "BUKA_NOTEPAD_COOKIE.bat"
+                     - Ekspor cookies dari tab thisvid.com (format Netscape via
+                       ekstensi seperti 'Get cookies.txt LOCALLY')
+                     - Paste ke dalam file input_cookie.txt lalu simpan.
+======================================================================
