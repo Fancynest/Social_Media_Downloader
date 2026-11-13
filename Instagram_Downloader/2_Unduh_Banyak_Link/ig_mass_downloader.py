@@ -15,7 +15,14 @@ if sys.platform.startswith("win"):
     except Exception:
         pass
 
-import instaloader
+try:
+    import instaloader
+except ImportError:
+    import subprocess
+    print("[*] Menyiapkan paket library (instaloader)...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "instaloader>=4.10"])
+    import instaloader
+
 from instaloader.exceptions import TooManyRequestsException
 
 

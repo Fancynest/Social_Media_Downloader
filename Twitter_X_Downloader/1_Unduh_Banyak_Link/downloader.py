@@ -41,6 +41,13 @@ def find_ytdlp() -> str:
     for match in winget_path.glob("**/yt-dlp.exe"):
         if match.is_file():
             return str(match)
+    try:
+        import yt_dlp
+    except ImportError:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "yt-dlp>=2024.0.0"])
+        except Exception:
+            pass
     return "yt-dlp"
 
 

@@ -123,9 +123,15 @@ def main():
     try:
         import yt_dlp
     except ImportError:
-        print("\n[x] Library 'yt-dlp' belum terpasang.")
-        print("    Jalankan perintah: pip install yt-dlp")
-        return
+        print("\n[*] Library 'yt-dlp' belum terpasang. Memasang otomatis...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "yt-dlp>=2024.0.0"])
+            import yt_dlp
+            print("[✓] Library 'yt-dlp' berhasil dipasang!\n")
+        except Exception as e:
+            print(f"[x] Gagal memasang otomatis: {e}")
+            print("    Silakan jalankan: pip install -r requirements.txt")
+            return
 
     outtmpl = str(OUTPUT_DIR / "%(title)s [%(id)s].%(ext)s")
 

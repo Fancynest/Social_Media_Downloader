@@ -1,0 +1,21 @@
+PANDUAN PENGGUNAAN: TIKTOK BATCH DOWNLOADER (VIDEO TANPA WATERMARK & SLIDE FOTO)
+================================================================================
+
+1. Buka berkas BUKA_NOTEPAD_LINK.bat.
+2. Tempelkan tautan video/foto TikTok (1 baris 1 link).
+   Mendukung:
+   - Video biasa : https://www.tiktok.com/@username/video/...
+   - Link pendek : https://vt.tiktok.com/... atau https://vm.tiktok.com/...
+   - Slide foto  : https://www.tiktok.com/@username/photo/...
+3. Simpan berkas (Ctrl + S), lalu tutup Notepad.
+4. (Opsional untuk video privat / 18+):
+   Buka BUKA_NOTEPAD_COOKIE.bat, tempelkan cookies sesi login TikTok Anda, lalu simpan.
+5. Klik 2x DOWNLOAD_SEKARANG.bat untuk memulai proses unduhan.
+6. Hasil unduhan otomatis tersimpan di dalam folder:
+   Hasil_Download\
+
+FITUR:
+- Video kualitas Full HD / resolusi asli TANPA WATERMARK.
+- Mendukung download slide foto (image slideshow mode).
+- Anti-Duplikat: Konten yang sudah pernah diunduh otomatis dilewati.
+- Bypass batasan akun / login via cookies.

@@ -37,6 +37,16 @@ def find_gallery_dl() -> list:
     for match in winget_path.glob("**/gallery-dl.exe"):
         if match.is_file():
             return [str(match)]
+
+    try:
+        import gallery_dl
+    except ImportError:
+        print("[*] Memasang library 'gallery-dl' secara otomatis...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "gallery-dl>=1.27.0"])
+        except Exception:
+            pass
+
     return [sys.executable, "-m", "gallery_dl"]
 
 

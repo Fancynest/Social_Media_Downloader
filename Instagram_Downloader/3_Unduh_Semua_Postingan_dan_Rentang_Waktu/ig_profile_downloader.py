@@ -16,8 +16,16 @@ from datetime import datetime, date
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 
-import requests
-import instaloader
+try:
+    import requests
+    import instaloader
+except ImportError:
+    import subprocess
+    print("[*] Menyiapkan paket library (instaloader & requests)...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "instaloader>=4.10", "requests>=2.28.0"])
+    import requests
+    import instaloader
+
 from instaloader.exceptions import (
     ProfileNotExistsException,
     LoginRequiredException,

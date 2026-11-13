@@ -16,7 +16,7 @@ DARI_TANGGAL=
 SAMPAI_TANGGAL=
 
 TARGET_AKUN=
-# https://www.instagram.com/username/
+https://www.instagram.com/herry_hoperz?psln=MWhraWIwb3RpcXRsbw==
 
 MAKSIMAL_POST=0
 SIMPAN_CAPTION=tidak

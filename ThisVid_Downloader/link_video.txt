@@ -1,9 +1,0 @@
-# =====================================================================
-# TEMPELKAN (PASTE) SEMUA LINK VIDEO THISVID DI SINI
-# Aturan:
-# 1. Satu link per baris.
-# 2. Contoh:
-#    https://thisvid.com/videos/contoh-judul-video-12345/
-# 3. Baris yang diawali tanda pagar (#) akan diabaikan.
-# =====================================================================
-

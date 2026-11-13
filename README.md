@@ -1,6 +1,8 @@
 # Social Media Downloader Suite
 
-Tool otomatisasi pengunduh media untuk YouTube, Instagram, X (Twitter), dan ThisVid berbasis Python. Ringan, cepat, dan mudah digunakan langsung melalui berkas batch (`.bat`) di Windows.
+Tool otomatisasi pengunduh media untuk **YouTube, Instagram, X (Twitter), dan TikTok** berbasis Python. Ringan, cepat, dan sangat mudah digunakan langsung melalui berkas batch (`.bat`) di Windows.
+
+> **Plug & Play (Sekali Klik Tinggal Pakai):** Jika baru pertama kali meng-clone repository ini, Anda cukup klik 2x `1_SETUP_SEKALI_KLIK.bat` (atau langsung jalankan `DOWNLOAD_SEKARANG.bat` pada modul apa pun — script akan otomatis menyiapkan library yang dibutuhkan di latar belakang tanpa ribet!).
 
 ---
 
@@ -27,11 +29,13 @@ Tool otomatisasi pengunduh media untuk YouTube, Instagram, X (Twitter), dan This
 * **Fast Direct Resolver:** Mengunduh media langsung via CDN tanpa browser, serta mendukung cookies untuk konten sensitif/privat.
 * **Anti-Duplikat:** Otomatis mendeteksi media yang sudah pernah diunduh agar hemat kuota.
 
-### 4. ThisVid Downloader
-* **Batch Download Massal:** Unduh banyak video sekaligus dari daftar tautan di Notepad.
-* **Kualitas Video & Audio Maksimal:** Otomatis memilih resolusi terbaik dan menggabungkan audio/video menjadi MP4 utuh.
-* **Auto-DoH Anti-Sensor:** Melewati pembajakan DNS ISP (Internet Sehat) secara otomatis.
-* **Anti-Duplikat:** Melewati video yang sudah pernah berhasil diunduh.
+### 4. TikTok Downloader
+* **Kualitas Terbaik Bebas Watermark (No-WM):** Mengunduh video TikTok langsung tanpa watermark dalam resolusi Full HD.
+* **Mendukung Mode Slide Foto:** Otomatis mengunduh seluruh gambar pada postingan korsel/slide foto TikTok.
+* **Modul 1 (Banyak Link):** Unduh massal dari daftar tautan video biasa (`tiktok.com/@user/video/...`), link pendek (`vt.tiktok.com` / `vm.tiktok.com`), atau tautan slide foto.
+* **Modul 2 (Profil & Rentang Waktu):** Unduh semua video dari akun TikTok (`https://www.tiktok.com/@username`) dengan filter tanggal upload (`DARI_TANGGAL` & `SAMPAI_TANGGAL`).
+* **Bypass Cookies:** Mendukung input cookies untuk akun privat atau konten dengan batasan login.
+* **Anti-Duplikat:** Video yang sudah pernah diunduh otomatis dilewati.
 
 ---
 
@@ -39,6 +43,8 @@ Tool otomatisasi pengunduh media untuk YouTube, Instagram, X (Twitter), dan This
 
 ```text
 Social_Media_Downloader/
+├── 1_SETUP_SEKALI_KLIK.bat                   # Setup otomatis library & dependensi sekali klik
+│
 ├── YouTube_Downloader/
 │   ├── 1_Unduh_Banyak_Link/                  # Download massal Video, Shorts & Playlist
 │   │   ├── BUKA_NOTEPAD_LINK.bat
@@ -90,13 +96,21 @@ Social_Media_Downloader/
 │       ├── input_cookie.txt
 │       └── profile_downloader.py
 │
-├── ThisVid_Downloader/
-│   ├── BUKA_NOTEPAD_LINK.bat
-│   ├── BUKA_NOTEPAD_COOKIE.bat
-│   ├── DOWNLOAD_SEKARANG.bat
-│   ├── link_video.txt
-│   ├── input_cookie.txt
-│   └── downloader.py
+├── TikTok_Downloader/
+│   ├── 1_Unduh_Banyak_Link/                  # Download massal Video No-WM & Slide Foto
+│   │   ├── BUKA_NOTEPAD_LINK.bat
+│   │   ├── BUKA_NOTEPAD_COOKIE.bat
+│   │   ├── DOWNLOAD_SEKARANG.bat
+│   │   ├── link_tiktok.txt
+│   │   ├── input_cookie.txt
+│   │   └── downloader.py
+│   └── 2_Unduh_Profil_dan_Rentang_Waktu/     # Download semua video Profil + Rentang Waktu
+│       ├── BUKA_NOTEPAD_TARGET.bat
+│       ├── BUKA_NOTEPAD_COOKIE.bat
+│       ├── DOWNLOAD_SEKARANG.bat
+│       ├── target_profil.txt
+│       ├── input_cookie.txt
+│       └── profile_downloader.py
 │
 ├── requirements.txt
 └── README.md
@@ -107,10 +121,12 @@ Social_Media_Downloader/
 ## Instalasi & Persiapan
 
 1. Pastikan **Python 3.10+** sudah terpasang di komputer Anda.
-2. Pasang library yang dibutuhkan melalui terminal / CMD:
-   ```bash
-   pip install -r requirements.txt
+2. Cukup klik 2x file:
+   ```text
+   1_SETUP_SEKALI_KLIK.bat
    ```
+   *File ini akan otomatis mendeteksi Python, memasang seluruh dependensi (`yt-dlp`, `instaloader`, `gallery-dl`, `requests`), serta memeriksa FFmpeg.*
+   *(Bahkan jika Anda lupa menjalankan setup, script download di setiap folder sudah dilengkapi fitur auto-install mandiri saat pertama kali dijalankan).*
 
 ---
 
@@ -129,7 +145,7 @@ Social_Media_Downloader/
 - **Unduh Tweet Satuan / Massal:** Masuk ke `Twitter_X_Downloader/1_Unduh_Banyak_Link/`, tempelkan link tweet di `BUKA_NOTEPAD_LINK.bat`, lalu jalankan `DOWNLOAD_SEKARANG.bat`.
 - **Unduh Semua Media Profil & Rentang Waktu:** Masuk ke `Twitter_X_Downloader/2_Unduh_Profil_dan_Rentang_Waktu/`, buka `BUKA_NOTEPAD_TARGET.bat`, tentukan rentang tanggal dan tempel link profil (`https://x.com/username`), lalu jalankan `DOWNLOAD_SEKARANG.bat`.
 
-### ThisVid Downloader
-1. Buka `ThisVid_Downloader/BUKA_NOTEPAD_LINK.bat`.
-2. Tempelkan tautan video ThisVid (1 baris 1 link), lalu simpan (`Ctrl+S`).
-3. Jalankan `DOWNLOAD_SEKARANG.bat`.
+### TikTok Downloader
+- **Unduh Video Bebas Watermark & Slide Foto:** Masuk ke `TikTok_Downloader/1_Unduh_Banyak_Link/`, buka `BUKA_NOTEPAD_LINK.bat`, tempelkan tautan video/slide TikTok, lalu jalankan `DOWNLOAD_SEKARANG.bat`.
+- **Unduh Semua Video Profil & Rentang Waktu:** Masuk ke `TikTok_Downloader/2_Unduh_Profil_dan_Rentang_Waktu/`, buka `BUKA_NOTEPAD_TARGET.bat`, tentukan rentang tanggal dan tempel username atau link profil (`https://www.tiktok.com/@username`), lalu jalankan `DOWNLOAD_SEKARANG.bat`.
+

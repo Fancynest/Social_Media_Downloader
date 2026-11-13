@@ -1,0 +1,11 @@
+# =====================================================================
+# TEMPELKAN (PASTE) SEMUA LINK TIKTOK DI SINI
+# =====================================================================
+# Aturan:
+# 1. Satu tautan per baris.
+# 2. Mendukung:
+#    - Video standar : https://www.tiktok.com/@username/video/1234567890123456789
+#    - Link pendek   : https://vt.tiktok.com/ZSxxxxxxx/ atau https://vm.tiktok.com/ZMxxxxxxx/
+#    - Slide Foto    : https://www.tiktok.com/@username/photo/1234567890123456789
+# 3. Baris yang diawali tanda pagar (#) akan diabaikan.
+# =====================================================================

@@ -1,0 +1,19 @@
+# =====================================================================
+# PENGATURAN TARGET PROFIL TIKTOK & RENTANG WAKTU
+# =====================================================================
+# Petunjuk Pengisian:
+# 1. DARI_TANGGAL  : Format YYYY-MM-DD (Contoh: 2024-01-01).
+#                    Kosongkan jika ingin mengunduh semua dari awal akun.
+# 2. SAMPAI_TANGGAL: Format YYYY-MM-DD (Contoh: 2024-12-31).
+#                    Kosongkan jika ingin mengunduh hingga video terbaru.
+# 3. Tempelkan tautan profil atau username TikTok di bawah ini (1 baris 1 target):
+#    Contoh yang didukung:
+#    https://www.tiktok.com/@nama_akun
+#    @nama_akun
+#    nama_akun
+# =====================================================================
+
+DARI_TANGGAL=
+SAMPAI_TANGGAL=
+
+# TEMPELKAN TARGET PROFIL DI BAWAH INI:
