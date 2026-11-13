@@ -1,0 +1,19 @@
+# =====================================================================
+# PENGATURAN TARGET CHANNEL YOUTUBE & RENTANG WAKTU
+# =====================================================================
+# Petunjuk Pengisian:
+# 1. DARI_TANGGAL  : Format YYYY-MM-DD (Contoh: 2024-01-01).
+#                    Kosongkan jika ingin mengunduh semua dari awal channel.
+# 2. SAMPAI_TANGGAL: Format YYYY-MM-DD (Contoh: 2024-12-31).
+#                    Kosongkan jika ingin mengunduh hingga video terbaru.
+# 3. Tempelkan link channel atau akun YouTube di bawah ini (1 link per baris):
+#    Contoh:
+#    https://www.youtube.com/@NamaChannel
+#    https://www.youtube.com/channel/UCxxxxxxxxx
+#    https://www.youtube.com/c/NamaKustom
+# =====================================================================
+
+DARI_TANGGAL=
+SAMPAI_TANGGAL=
+
+# TEMPELKAN LINK CHANNEL DI BAWAH INI:

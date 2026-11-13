@@ -1,0 +1,21 @@
+PANDUAN PENGGUNAAN: YOUTUBE BATCH DOWNLOADER (VIDEO, SHORTS, PLAYLIST)
+=======================================================================
+
+1. Buka berkas BUKA_NOTEPAD_LINK.bat.
+2. Tempelkan tautan video YouTube (1 baris 1 link).
+   Mendukung:
+   - Video biasa: https://www.youtube.com/watch?v=...
+   - Link pendek: https://youtu.be/...
+   - Shorts     : https://www.youtube.com/shorts/...
+   - Playlist   : https://www.youtube.com/playlist?list=...
+3. Simpan berkas (Ctrl + S), lalu tutup Notepad.
+4. (Opsional untuk video 18+ / Restricted):
+   Buka BUKA_NOTEPAD_COOKIE.bat, tempelkan cookies sesi login YouTube Anda, lalu simpan.
+5. Klik 2x DOWNLOAD_SEKARANG.bat untuk memulai proses unduhan.
+6. Video hasil unduhan otomatis tersimpan di dalam folder:
+   Hasil_Download\
+
+FITUR:
+- Kualitas Full HD / 2K / 4K (otomatis menggabungkan video + audio terbaik via FFmpeg).
+- Anti-Duplikat: Video yang sudah pernah diunduh otomatis dilewati.
+- Bypass batas usia / age restriction via file cookies.

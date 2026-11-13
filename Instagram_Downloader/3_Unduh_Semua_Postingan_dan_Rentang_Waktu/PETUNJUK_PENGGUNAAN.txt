@@ -1,0 +1,28 @@
+PANDUAN PENGGUNAAN: INSTAGRAM PROFILE & DATE RANGE DOWNLOADER
+==============================================================
+Modul ini digunakan untuk mengunduh SEMUA postingan dari akun Instagram
+target atau dalam periode tanggal tertentu (tanpa perlu filter kata kunci).
+
+LANGKAH PENGGUNAAN:
+1. Buka BUKA_INPUT_TARGET.bat.
+2. Atur tanggal (opsional):
+   - DARI_TANGGAL   : Tanggal awal (format YYYY-MM-DD, contoh: 2024-01-01)
+   - SAMPAI_TANGGAL : Tanggal akhir (format YYYY-MM-DD, contoh: 2024-12-31)
+   (Biarkan kosong jika ingin mengunduh semua postingan tanpa batas waktu).
+3. Masukkan akun target pada TARGET_AKUN:
+   Contoh:
+   https://www.instagram.com/natgeo/
+   atau username saja (misal: natgeo).
+4. Simpan file (Ctrl+S), lalu tutup Notepad.
+5. Klik 2x JALANKAN_DOWNLOADER.bat untuk memulai proses pengunduhan.
+6. Hasil unduhan otomatis tersimpan di folder:
+   Hasil_Download/[username]/
+
+FITUR UNGGULAN:
+- Mengunduh foto, video, Reels, dan korsel (multi-slide).
+- Optimasi rentang waktu: Skrip memindai postingan dari yang paling baru
+  dan akan otomatis BERHENTI jika mencapai postingan yang lebih lama dari
+  DARI_TANGGAL (menghemat kuota dan mempercepat proses).
+- Otomatis melewati postingan yang sudah pernah diunduh sebelumnya.
+- Jika target bersifat privat atau terkena limit, gunakan LOGIN_AKUN.bat
+  atau tempel sessionid di BUKA_NOTEPAD_LOGIN.bat.

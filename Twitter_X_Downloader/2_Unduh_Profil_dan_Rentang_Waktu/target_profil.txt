@@ -1,0 +1,19 @@
+# =====================================================================
+# PENGATURAN TARGET PROFIL X / TWITTER & RENTANG WAKTU
+# =====================================================================
+# Petunjuk Pengisian:
+# 1. DARI_TANGGAL  : Format YYYY-MM-DD (Contoh: 2024-01-01).
+#                    Kosongkan jika ingin mengunduh semua tanpa batas awal.
+# 2. SAMPAI_TANGGAL: Format YYYY-MM-DD (Contoh: 2024-12-31).
+#                    Kosongkan jika ingin mengunduh hingga tweet paling baru.
+# 3. Tempelkan link profil atau username akun di bawah ini (1 per baris):
+#    Contoh:
+#    https://x.com/username
+#    https://twitter.com/username
+#    @username
+# =====================================================================
+
+DARI_TANGGAL=
+SAMPAI_TANGGAL=
+
+# TEMPELKAN LINK PROFIL DI BAWAH INI:

@@ -1,0 +1,22 @@
+# ==============================================================================
+# PENGATURAN TARGET PROFIL INSTAGRAM & RENTANG WAKTU
+# ==============================================================================
+# Petunjuk Pengisian:
+# 1. DARI_TANGGAL  : Batas awal tanggal postingan (format: YYYY-MM-DD, contoh: 2024-01-01).
+#                    Kosongkan jika ingin mengunduh dari awal akun dibuat.
+# 2. SAMPAI_TANGGAL: Batas akhir tanggal postingan (format: YYYY-MM-DD, contoh: 2024-12-31).
+#                    Kosongkan jika ingin mengunduh hingga postingan paling baru.
+# 3. TARGET_AKUN   : Masukkan 1 atau lebih akun target (bisa tautan profil atau username).
+#                    Bisa ditulis satu per baris atau dipisahkan koma/spasi.
+# 4. MAKSIMAL_POST : Batas jumlah postingan yang diunduh per akun (isi 0 untuk SEMUA).
+# 5. SIMPAN_CAPTION: Simpan teks caption ke file .txt? (ya / tidak, default: tidak).
+# ==============================================================================
+
+DARI_TANGGAL=
+SAMPAI_TANGGAL=
+
+TARGET_AKUN=
+# https://www.instagram.com/username/
+
+MAKSIMAL_POST=0
+SIMPAN_CAPTION=tidak

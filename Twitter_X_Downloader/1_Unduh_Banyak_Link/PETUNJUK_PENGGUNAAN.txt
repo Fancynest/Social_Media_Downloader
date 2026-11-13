@@ -1,0 +1,21 @@
+PANDUAN PENGGUNAAN: TWITTER / X BATCH DOWNLOADER (FOTO & VIDEO)
+==============================================================
+
+1. Buka berkas BUKA_NOTEPAD_LINK.bat.
+2. Tempelkan tautan postingan X / Twitter (1 baris 1 tautan).
+   Contoh format tautan:
+   https://x.com/username/status/1234567890123456789
+   https://twitter.com/username/status/1234567890123456789
+3. Simpan berkas (Ctrl + S), lalu tutup Notepad.
+4. (Opsional untuk konten sensitif / 18+ / akun protected):
+   Buka BUKA_NOTEPAD_COOKIE.bat dan tempelkan cookies login X Anda.
+5. Klik 2x DOWNLOAD_SEKARANG.bat untuk memulai proses unduhan.
+6. Berkas foto dan video hasil unduhan tersimpan di folder:
+   Hasil_Download\
+
+FITUR:
+- Mengunduh foto kualitas original (?name=orig) tanpa kompresi.
+- Mendukung multi-photo (1 s/d 4 foto dalam satu tweet).
+- Mengunduh video kualitas tertinggi (MP4 resolusi dan bitrate terbaik).
+- Fast Direct Resolver via CDN & yt-dlp fallback.
+- Anti-Duplikat: Melewati postingan yang sudah pernah diunduh sebelumnya.

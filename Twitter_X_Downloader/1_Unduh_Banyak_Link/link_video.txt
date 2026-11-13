@@ -1,0 +1,11 @@
+# ==============================================================================
+# DAFTAR TAUTAN POSTINGAN X / TWITTER YANG INGIN DIUNDUH (FOTO & VIDEO)
+# ==============================================================================
+# Petunjuk Pengisian:
+# 1. Tempelkan semua tautan postingan di bawah ini (1 baris 1 link).
+# 2. Mendukung postingan VIDEO maupun FOTO (termasuk 1 s/d 4 foto sekaligus).
+# 3. Contoh format tautan:
+#    https://x.com/username/status/1234567890123456789
+# 4. Baris yang diawali tanda '#' akan diabaikan.
+# ==============================================================================
+

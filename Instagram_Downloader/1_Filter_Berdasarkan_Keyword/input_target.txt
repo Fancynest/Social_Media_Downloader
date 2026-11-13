@@ -1,17 +1,15 @@
 # ==============================================================================
-# PENGATURAN TARGET & FILTER INSTAGRAM (UNDUH SEMUA / KATA KUNCI / RENTANG WAKTU)
+# PENGATURAN TARGET & FILTER KATA KUNCI INSTAGRAM (MULTI-AKUN BATCH)
 # ==============================================================================
 # Petunjuk Pengisian:
 # 1. TARGET_AKUN   : Masukkan 1 atau banyak tautan akun Instagram (bisa satu baris
 #                    dipisahkan koma/spasi atau baris baru per tautan).
-# 2. DARI_TANGGAL  : Batas tanggal awal (format YYYY-MM-DD, contoh: 2026-01-01).
-#                    Kosongkan jika ingin mengunduh tanpa batas tanggal awal.
-# 3. SAMPAI_TANGGAL: Batas tanggal akhir (format YYYY-MM-DD, contoh: 2026-12-31).
-#                    Kosongkan jika ingin mengunduh hingga postingan terbaru.
-# 4. KEYWORDS      : Kata kunci pencarian pada caption (pisahkan koma).
-#                    KOSONGKAN jika ingin mengunduh SEMUA postingan dari akun target.
-# 5. HASHTAGS      : Tagar spesifik pada caption (pisahkan koma).
-#                    KOSONGKAN jika ingin mengunduh SEMUA postingan dari akun target.
+# 2. KEYWORDS      : Kata kunci pencarian pada caption (pisahkan koma).
+# 3. HASHTAGS      : Tagar spesifik pada caption (pisahkan koma).
+# 4. DARI_TANGGAL  : Batas tanggal awal (format YYYY-MM-DD, contoh: 2024-01-01).
+#                    Kosongkan jika ingin tanpa batas tanggal awal.
+# 5. SAMPAI_TANGGAL: Batas tanggal akhir (format YYYY-MM-DD, contoh: 2024-12-31).
+#                    Kosongkan jika ingin hingga postingan terbaru.
 # 6. MAKSIMAL_POST : Batas postingan yang dicek per akun (isi 0 untuk semua).
 # 7. SIMPAN_CAPTION: Apakah caption disimpan ke file .txt? (ya / tidak, default: tidak).
 # ==============================================================================

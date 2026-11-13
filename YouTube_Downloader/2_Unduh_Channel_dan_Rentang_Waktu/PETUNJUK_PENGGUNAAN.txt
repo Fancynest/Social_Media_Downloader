@@ -1,0 +1,26 @@
+PANDUAN PENGGUNAAN: YOUTUBE CHANNEL & DATE RANGE DOWNLOADER
+=============================================================
+Modul ini digunakan untuk mengunduh seluruh video dari sebuah Channel
+YouTube atau dalam rentang waktu (tanggal rilis) tertentu.
+
+LANGKAH PENGGUNAAN:
+1. Buka BUKA_NOTEPAD_TARGET.bat.
+2. Atur rentang waktu (opsional):
+   - DARI_TANGGAL   : Tanggal awal (format YYYY-MM-DD, contoh: 2024-01-01)
+   - SAMPAI_TANGGAL : Tanggal akhir (format YYYY-MM-DD, contoh: 2024-12-31)
+   (Biarkan kosong jika ingin mengunduh semua video sejak awal).
+3. Masukkan link channel YouTube di bagian bawah (1 baris 1 link):
+   Contoh:
+   https://www.youtube.com/@NamaChannel
+   https://www.youtube.com/channel/UCxxxxxxxxx
+4. Simpan file (Ctrl+S), lalu tutup Notepad.
+5. (Opsional untuk video 18+ / Members-only):
+   Buka BUKA_NOTEPAD_COOKIE.bat dan tempelkan cookies sesi login YouTube.
+6. Klik 2x DOWNLOAD_SEKARANG.bat untuk memulai proses unduhan.
+7. File otomatis tersimpan rapi per folder channel:
+   Hasil_Download/[Nama_Channel]/[Tanggal] - [Judul].mp4
+
+FITUR UNGGULAN:
+- Filter Rentang Waktu native yt-dlp (dateafter & datebefore).
+- Pengelompokan folder otomatis berdasarkan nama channel/uploader.
+- Anti-Duplikat: Video yang sudah berhasil diunduh tidak akan diunduh ulang.

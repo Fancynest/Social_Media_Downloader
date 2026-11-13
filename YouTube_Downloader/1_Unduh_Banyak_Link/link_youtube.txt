@@ -1,13 +1,6 @@
 # =====================================================================
-# PENGATURAN RENTANG WAKTU (OPSIONAL):
-# Format tanggal: YYYY-MM-DD (Contoh: DARI_TANGGAL=2026-01-01)
-# Kosongkan jika ingin mengunduh SEMUA video tanpa batas waktu.
+# TEMPELKAN (PASTE) SEMUA LINK VIDEO YOUTUBE DI SINI
 # =====================================================================
-DARI_TANGGAL=
-SAMPAI_TANGGAL=
-
-# =====================================================================
-# DAFTAR TAUTAN (VIDEO SATUAN, PLAYLIST, ATAU CHANNEL LENGKAP):
 # Aturan:
 # 1. Satu tautan per baris.
 # 2. Mendukung:
@@ -15,6 +8,6 @@ SAMPAI_TANGGAL=
 #    - Link pendek   : https://youtu.be/xxxxxxxxxxx
 #    - Shorts        : https://www.youtube.com/shorts/xxxxxxxxxxx
 #    - Playlist      : https://www.youtube.com/playlist?list=xxxxxxxxxxx
-#    - Channel/Akun  : https://www.youtube.com/@NamaChannel (Unduh Semua Video)
 # 3. Baris yang diawali tanda pagar (#) akan diabaikan.
 # =====================================================================
+

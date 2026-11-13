@@ -1,37 +1,48 @@
-# X (Twitter) Media Downloader
+# Twitter / X Downloader Suite
 
-Tool otomatisasi berkecepatan tinggi untuk mengunduh Video dan Foto dari X (Twitter) tanpa perlu login.
-
-## Fitur Utama
-
-- **Foto & Video:** Mengunduh video (bitrate tertinggi) dan foto (resolusi asli `?name=orig`).
-- **Multi-Media:** Mendukung unduhan postingan dengan 1-4 foto sekaligus.
-- **Fast CDN Resolver:** Menggunakan direct API resolver tanpa overhead peramban.
-- **Deduplikasi Otomatis:** Mencatat riwayat unduhan pada `download_history.txt` agar tidak mendownload ulang file yang sama.
+Koleksi tool otomatisasi untuk mengunduh foto kualitas asli dan video kualitas tertinggi dari Twitter / X.
 
 ## Struktur Direktori
 
 ```text
-Downloader_Video_X/
-├── BUKA_NOTEPAD_LINK.bat   # Buka notepad daftar link
-├── DOWNLOAD_SEKARANG.bat   # Jalankan downloader
-├── link_video.txt          # Daftar URL video/foto target
-├── downloader.py           # Script utama pengunduh
-├── download_history.txt    # Cache riwayat download
-└── Hasil_Download/         # Folder output media
+Twitter_X_Downloader/
+├── 1_Unduh_Banyak_Link/                 # Unduh massal foto & video dari daftar tautan postingan
+│   ├── BUKA_NOTEPAD_LINK.bat            # Buka file daftar tautan
+│   ├── BUKA_NOTEPAD_COOKIE.bat          # Buka file cookies login (opsional)
+│   ├── DOWNLOAD_SEKARANG.bat            # Jalankan downloader postingan
+│   ├── link_video.txt                   # Daftar link postingan X/Twitter
+│   ├── input_cookie.txt                 # File cookies login
+│   ├── downloader.py                    # Script batch downloader
+│   └── Hasil_Download/                  # Folder output foto & video
+│
+└── 2_Unduh_Profil_dan_Rentang_Waktu/   # Unduh semua media dari profil akun + filter rentang tanggal
+    ├── BUKA_NOTEPAD_TARGET.bat          # Buka konfigurasi profil & filter tanggal
+    ├── BUKA_NOTEPAD_COOKIE.bat          # Buka file cookies login (opsional)
+    ├── DOWNLOAD_SEKARANG.bat            # Jalankan downloader profil
+    ├── target_profil.txt                # Daftar link profil & filter tanggal
+    ├── input_cookie.txt                 # File cookies login
+    ├── profile_downloader.py            # Script profil downloader
+    └── Hasil_Download/                  # Folder output media (per akun profil)
 ```
 
 ## Prasyarat & Instalasi
 
 - Python 3.10+
-- yt-dlp (opsional sebagai fallback):
+- Library yang dibutuhkan:
   ```bash
-  pip install yt-dlp
+  pip install -r ../requirements.txt
   ```
 
 ## Cara Penggunaan
 
-1. Klik 2x `BUKA_NOTEPAD_LINK.bat`.
-2. Tempelkan URL postingan X/Twitter (satu baris satu link).
-3. Simpan (`Ctrl+S`), lalu klik 2x `DOWNLOAD_SEKARANG.bat`.
-4. Hasil unduhan otomatis tersimpan di folder `Hasil_Download/`.
+### Modul 1: Unduh Banyak Link (Postingan Satuan / Massal)
+1. Buka `1_Unduh_Banyak_Link/BUKA_NOTEPAD_LINK.bat`.
+2. Tempelkan tautan postingan X/Twitter (1 baris 1 link), lalu simpan (`Ctrl+S`).
+3. *(Opsional untuk postingan 18+/Protected)*: Buka `1_Unduh_Banyak_Link/BUKA_NOTEPAD_COOKIE.bat` dan tempelkan cookies.
+4. Klik 2x `DOWNLOAD_SEKARANG.bat`.
+
+### Modul 2: Unduh Profil & Rentang Waktu
+1. Buka `2_Unduh_Profil_dan_Rentang_Waktu/BUKA_NOTEPAD_TARGET.bat`.
+2. Atur tanggal pada `DARI_TANGGAL` dan `SAMPAI_TANGGAL` (format `YYYY-MM-DD`, kosongkan jika ingin mengunduh semua media).
+3. Tempelkan link profil pengguna (contoh: `https://x.com/username` atau `@username`).
+4. Klik 2x `DOWNLOAD_SEKARANG.bat`. File otomatis tersimpan di folder `Hasil_Download/[username]/`.

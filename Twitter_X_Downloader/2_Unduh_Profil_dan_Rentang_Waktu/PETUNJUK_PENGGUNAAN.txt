@@ -1,0 +1,27 @@
+PANDUAN PENGGUNAAN: TWITTER / X PROFILE & DATE RANGE DOWNLOADER
+================================================================
+Modul ini digunakan untuk mengunduh seluruh postingan media (foto & video)
+dari sebuah profil pengguna Twitter / X atau dalam rentang tanggal tertentu.
+
+LANGKAH PENGGUNAAN:
+1. Buka berkas BUKA_NOTEPAD_TARGET.bat.
+2. Atur rentang tanggal (opsional):
+   - DARI_TANGGAL   : Tanggal awal (format YYYY-MM-DD, contoh: 2024-01-01)
+   - SAMPAI_TANGGAL : Tanggal akhir (format YYYY-MM-DD, contoh: 2024-12-31)
+   (Biarkan kosong jika ingin mengunduh semua media dari awal).
+3. Masukkan tautan profil atau username akun di bagian bawah (1 baris 1 link):
+   Contoh:
+   https://x.com/username
+   https://twitter.com/username
+   @username
+4. Simpan berkas (Ctrl + S), lalu tutup Notepad.
+5. (Opsional untuk akun protected atau konten sensitif):
+   Buka BUKA_NOTEPAD_COOKIE.bat dan tempelkan cookies sesi login X.
+6. Klik 2x DOWNLOAD_SEKARANG.bat untuk memulai proses unduhan.
+7. Seluruh foto dan video otomatis tersimpan di folder:
+   Hasil_Download/[username]/
+
+FITUR UNGGULAN:
+- Mengunduh foto kualitas original (?name=orig) dan video bitrate tertinggi.
+- Filter tanggal native via gallery-dl engine.
+- Anti-Duplikat: Media yang sudah pernah diunduh tidak akan diunduh ulang.
