@@ -69,7 +69,12 @@ def prepare_clean_cookie_file() -> Path | None:
 def clean_url(raw_url: str) -> str:
     url = raw_url.strip()
     if url.startswith("@"):
-        return f"https://www.youtube.com/{url}"
+        url = f"https://www.youtube.com/{url}"
+    # Pastikan URL channel mengarah ke /videos agar mengunduh seluruh feed video (bukan hanya 3-5 video featured di tab Home)
+    if "youtube.com" in url:
+        cleaned_no_query = url.split("?")[0].rstrip("/")
+        if re.search(r'youtube\.com/(@[\w\.-]+|channel/[\w-]+|c/[\w\.-]+|user/[\w\.-]+)$', cleaned_no_query):
+            url = f"{cleaned_no_query}/videos"
     return url
 
 

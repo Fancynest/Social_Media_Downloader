@@ -212,6 +212,8 @@ def main():
         print(f"[*] Menggunakan file cookies: {cookie_file.name}")
     else:
         print("[*] Berjalan dalam mode publik anonim (tanpa cookies).")
+        print("    [!] Tips: Jika akun target memiliki konten sensitif/18+,")
+        print("        disarankan menggunakan cookies via 'BUKA_NOTEPAD_COOKIE.bat'.")
 
     gdl_cmd = find_gallery_dl()
     print("-" * 65)

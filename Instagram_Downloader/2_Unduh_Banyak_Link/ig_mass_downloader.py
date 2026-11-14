@@ -149,6 +149,20 @@ def get_instaloader_instance(save_caption: bool = False):
     return loader
 
 
+def download_with_gallery_dl(url: str, output_folder: Path) -> bool:
+    try:
+        cmd = [
+            sys.executable, "-m", "gallery_dl",
+            "-d", str(output_folder),
+            "--no-mtime",
+            url
+        ]
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace", timeout=120)
+        return res.returncode == 0
+    except Exception:
+        return False
+
+
 def download_with_ytdlp(ytdlp_bin: str, url: str, output_folder: Path) -> bool:
     try:
         cmd = [
@@ -238,14 +252,22 @@ def main():
                 if download_with_ytdlp(ytdlp_bin, url, OUTPUT_DIR):
                     print("    [✓] Berhasil diunduh via yt-dlp.")
                     downloaded = True
+            if not downloaded:
+                print("    --> Mencoba fallback via gallery-dl...")
+                if download_with_gallery_dl(url, OUTPUT_DIR):
+                    print("    [✓] Berhasil diunduh via gallery-dl.")
+                    downloaded = True
         except Exception as e:
             if ytdlp_bin:
                 print(f"    [!] Instaloader gagal ({e}), mencoba yt-dlp...")
                 if download_with_ytdlp(ytdlp_bin, url, OUTPUT_DIR):
                     print("    [✓] Berhasil diunduh via yt-dlp.")
                     downloaded = True
-            else:
-                print(f"    [x] Gagal mengunduh: {e}")
+            if not downloaded:
+                print("    --> Mencoba fallback via gallery-dl...")
+                if download_with_gallery_dl(url, OUTPUT_DIR):
+                    print("    [✓] Berhasil diunduh via gallery-dl.")
+                    downloaded = True
 
         if downloaded:
             success += 1

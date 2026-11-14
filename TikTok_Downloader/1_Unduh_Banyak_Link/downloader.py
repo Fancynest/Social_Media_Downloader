@@ -75,6 +75,22 @@ def clean_url(raw_url: str) -> str:
     return url
 
 
+def download_with_gallery_dl(url: str, cookie_file: Path | None) -> bool:
+    cmd = [
+        sys.executable, "-m", "gallery_dl",
+        "-d", str(OUTPUT_DIR),
+        "--no-mtime",
+        url
+    ]
+    if cookie_file:
+        cmd.extend(["--cookies", str(cookie_file)])
+    try:
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", timeout=120)
+        return proc.returncode == 0
+    except Exception:
+        return False
+
+
 def load_links():
     if not TXT_FILE.exists():
         with open(TXT_FILE, "w", encoding="utf-8") as f:
@@ -153,12 +169,24 @@ def main():
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         for idx, url in enumerate(links, start=1):
             print(f"\n[{idx}/{total}] Memproses: {url}")
+            downloaded = False
             try:
                 ret = ydl.download([url])
                 if ret == 0:
-                    success += 1
+                    downloaded = True
             except Exception as e:
-                print(f"[x] Kendala saat mengunduh {url}: {e}")
+                print(f"     [!] yt-dlp kendala ({e})")
+
+            if not downloaded:
+                print("     [*] Mencoba unduh via gallery-dl...")
+                if download_with_gallery_dl(url, cookie_file):
+                    print("     [✓] Berhasil diunduh via gallery-dl!")
+                    downloaded = True
+
+            if downloaded:
+                success += 1
+            else:
+                print(f"     [x] Gagal mengunduh: {url}")
 
     print("\n" + "=" * 65)
     print(f"[✓] Pengunduhan selesai! Berhasil diproses: {success}/{total}")

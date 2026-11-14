@@ -137,6 +137,24 @@ def load_profiles_and_settings():
     return profiles, dari_tanggal, sampai_tanggal
 
 
+def download_profile_with_gallery_dl(user: str, dest_dir: Path, cookie_file: Path | None) -> bool:
+    target_url = f"https://www.tiktok.com/@{user}"
+    cmd = [
+        sys.executable, "-m", "gallery_dl",
+        "-d", str(dest_dir),
+        "--download-archive", str(ARCHIVE_FILE),
+        "--no-mtime",
+        target_url
+    ]
+    if cookie_file:
+        cmd.extend(["--cookies", str(cookie_file)])
+    try:
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", timeout=300)
+        return proc.returncode == 0
+    except Exception:
+        return False
+
+
 def main():
     print("=" * 65)
     print("       TIKTOK PROFILE & DATE RANGE DOWNLOADER")
@@ -211,13 +229,25 @@ def main():
         if cookie_file:
             ydl_opts["cookiefile"] = str(cookie_file)
 
+        downloaded = False
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ret = ydl.download([url])
                 if ret == 0:
-                    success += 1
+                    downloaded = True
         except Exception as e:
-            print(f"[x] Kendala saat mengunduh @{user}: {e}")
+            print(f"     [!] yt-dlp kendala ({e})")
+
+        if not downloaded:
+            print(f"     [*] Mencoba unduh profil @{user} via gallery-dl...")
+            if download_profile_with_gallery_dl(user, dest_dir, cookie_file):
+                print(f"     [✓] Berhasil diunduh via gallery-dl!")
+                downloaded = True
+
+        if downloaded:
+            success += 1
+        else:
+            print(f"     [x] Gagal memproses profil: @{user}")
 
     print("\n" + "=" * 65)
     print(f"[✓] Selesai! Berhasil memproses {success}/{total_profiles} profil.")

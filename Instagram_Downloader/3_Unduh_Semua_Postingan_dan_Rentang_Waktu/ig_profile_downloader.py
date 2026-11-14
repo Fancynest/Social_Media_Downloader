@@ -37,6 +37,53 @@ from instaloader.exceptions import (
     QueryReturnedBadRequestException,
 )
 
+
+def _patch_instaloader():
+    """
+    1. Arahkan query doc_id GraphQL ke /api/graphql agar tidak terkena 400 feedback_required / 302.
+    2. Fallback Profile.from_username dengan sesi login untuk akun dengan konten restricted / sensitif / batas usia.
+    """
+    orig_doc_id = instaloader.InstaloaderContext.doc_id_graphql_query
+
+    def patched_doc_id(self, doc_id: str, variables: dict, referer: Optional[str] = None, web_api: bool = True):
+        return orig_doc_id(self, doc_id, variables, referer=referer, web_api=True)
+
+    instaloader.InstaloaderContext.doc_id_graphql_query = patched_doc_id
+
+    orig_from_username = instaloader.Profile.from_username
+
+    def patched_from_username(cls, context, username: str):
+        try:
+            return orig_from_username(context, username)
+        except ProfileNotExistsException:
+            if not context.is_logged_in:
+                raise
+            try:
+                html = context._get_page(context._session, f"{username.lower()}/")
+            except Exception:
+                raise ProfileNotExistsException(f"Profile {username} does not exist.")
+
+            if "Sorry, this page isn't available" in html or "Halaman ini tidak tersedia" in html:
+                raise ProfileNotExistsException(f"Profile {username} does not exist.")
+
+            m_pid = re.findall(r'"profile_id":"(\d+)"', html)
+            if not m_pid:
+                m_pid = re.findall(r'"page_id":"profilePage_(\d+)"', html)
+            if not m_pid:
+                m_pid = re.findall(r'"props":\{"id":"(\d+)"', html)
+
+            if m_pid:
+                pid = m_pid[0]
+                node = {"id": str(pid), "pk": int(pid), "username": username.lower()}
+                return cls(context, node)
+
+            raise ProfileNotExistsException(f"Profile {username} does not exist.")
+
+    instaloader.Profile.from_username = classmethod(patched_from_username)
+
+
+_patch_instaloader()
+
 BASE_DIR = Path(__file__).parent.resolve()
 OUTPUT_DIR = BASE_DIR / "Hasil_Download"
 CONFIG_FILE = BASE_DIR / "input_target.txt"
@@ -50,11 +97,13 @@ def extract_username(url_or_username: str) -> str:
     raw = url_or_username.strip()
     if not raw or raw.startswith("#"):
         return ""
+    if "?" in raw:
+        raw = raw.split("?")[0]
     m = re.search(r"instagram\.com/([A-Za-z0-9_.]+)", raw)
     if m:
         u = m.group(1).rstrip("/").strip()
         return u if not u.startswith("#") else ""
-    u = raw.lstrip("@").strip()
+    u = raw.lstrip("@").strip().rstrip("/")
     return u if not u.startswith("#") else ""
 
 
