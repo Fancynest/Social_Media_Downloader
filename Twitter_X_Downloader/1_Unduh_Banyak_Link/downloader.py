@@ -3,7 +3,8 @@
 Twitter / X Batch Downloader (Foto & Video)
 ===========================================
 Mengunduh foto resolusi asli dan video resolusi tertinggi dari daftar tautan
-postingan X/Twitter menggunakan Fast Direct CDN Resolver & yt-dlp fallback.
+postingan X/Twitter menggunakan Fast Direct FxTwitter CDN Resolver,
+gallery-dl, dan yt-dlp fallback.
 """
 
 import os
@@ -125,11 +126,27 @@ def download_file(url: str, dest_path: Path) -> bool:
     }
     req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=30) as response, open(dest_path, "wb") as out_file:
-            shutil.copyfileobj(response, out_file)
+        with urllib.request.urlopen(req, timeout=60) as response, open(dest_path, "wb") as out_file:
+            total_size = int(response.headers.get("Content-Length", 0))
+            downloaded = 0
+            chunk_size = 1024 * 512
+            while True:
+                chunk = response.read(chunk_size)
+                if not chunk:
+                    break
+                out_file.write(chunk)
+                downloaded += len(chunk)
+                mb_cur = downloaded / (1024 * 1024)
+                if total_size > 0:
+                    percent = (downloaded / total_size) * 100
+                    mb_tot = total_size / (1024 * 1024)
+                    print(f"\r     [*] Mengunduh: {percent:5.1f}% [{mb_cur:.1f} MB / {mb_tot:.1f} MB]", end="", flush=True)
+                else:
+                    print(f"\r     [*] Mengunduh: [{mb_cur:.1f} MB]", end="", flush=True)
+            print()
         return True
     except Exception as e:
-        print(f"     [!] Kendala unduh langsung: {e}")
+        print(f"\n     [!] Kendala unduh langsung: {e}")
         if dest_path.exists():
             try:
                 dest_path.unlink()
@@ -138,15 +155,113 @@ def download_file(url: str, dest_path: Path) -> bool:
         return False
 
 
-def try_download_twitter_api(url: str) -> bool:
-    match = re.search(r'x\.com/([^/]+)/status/(\d+)', url)
-    if not match:
+def try_fxtwitter_api(tweet_id: str) -> bool:
+    api_url = f"https://api.fxtwitter.com/i/status/{tweet_id}"
+    req = urllib.request.Request(
+        api_url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+        }
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as res:
+            data = json.loads(res.read().decode("utf-8"))
+    except Exception:
         return False
 
-    author, tweet_id = match.group(1), match.group(2)
-    api_url = f"https://api.vxtwitter.com/{author}/status/{tweet_id}"
-    req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+    if data.get("code") != 200:
+        return False
 
+    tweet = data.get("tweet", {})
+    if not tweet:
+        return False
+
+    author = tweet.get("author", {}).get("screen_name", "user")
+    created_ts = tweet.get("created_timestamp")
+    if created_ts:
+        try:
+            date_str = datetime.fromtimestamp(created_ts).strftime("%Y-%m-%d")
+        except Exception:
+            date_str = datetime.now().strftime("%Y-%m-%d")
+    else:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
+    caption_clean = sanitize_filename(tweet.get("text", ""))
+    base_prefix = f"[{date_str}] [{author}] {caption_clean} ({tweet_id})"
+
+    media = tweet.get("media", {})
+    media_list = media.get("all", [])
+    if not media_list:
+        media_list = media.get("videos", []) + media.get("photos", [])
+
+    if not media_list:
+        return False
+
+    success_any = False
+    for i, m in enumerate(media_list):
+        m_type = m.get("type", "photo")
+        suffix = f"_{i+1}" if len(media_list) > 1 else ""
+
+        if m_type in ("video", "gif"):
+            m_url = m.get("url", "")
+            if m.get("variants"):
+                mp4_variants = [v for v in m["variants"] if v.get("content_type") == "video/mp4"]
+                if mp4_variants:
+                    best = max(mp4_variants, key=lambda v: v.get("bitrate", 0))
+                    m_url = best.get("url", m_url)
+
+            if not m_url:
+                continue
+
+            filename = f"{base_prefix}{suffix}.mp4"
+            dest = OUTPUT_DIR / filename
+            if dest.exists() and dest.stat().st_size > 1000:
+                print(f"     [✓] Video sudah ada: {filename}")
+                success_any = True
+                continue
+
+            print(f"     [*] Mengunduh Video via CDN...")
+            if download_file(m_url, dest):
+                print(f"     [✓] Video tersimpan: {filename}")
+                success_any = True
+        else:
+            m_url = m.get("url", "")
+            if not m_url:
+                continue
+
+            orig_url_media = m_url.split("?")[0] + "?name=orig" if "twimg.com" in m_url else m_url
+            ext = "jpg"
+            if ".png" in m_url.lower():
+                ext = "png"
+            elif ".webp" in m_url.lower():
+                ext = "webp"
+
+            filename = f"{base_prefix}{suffix}.{ext}"
+            dest = OUTPUT_DIR / filename
+            if dest.exists() and dest.stat().st_size > 1000:
+                print(f"     [✓] Foto sudah ada: {filename}")
+                success_any = True
+                continue
+
+            print(f"     [*] Mengunduh Foto resolusi asli...")
+            if download_file(orig_url_media, dest) or download_file(m_url, dest):
+                print(f"     [✓] Foto tersimpan: {filename}")
+                success_any = True
+
+    return success_any
+
+
+def try_vxtwitter_api(tweet_id: str, orig_url: str) -> bool:
+    m = re.search(r'x\.com/([^/]+)/status/\d+', orig_url)
+    author_guess = m.group(1) if m else "i"
+    api_url = f"https://api.vxtwitter.com/{author_guess}/status/{tweet_id}"
+    req = urllib.request.Request(
+        api_url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+    )
     try:
         with urllib.request.urlopen(req, timeout=15) as res:
             data = json.loads(res.read().decode("utf-8"))
@@ -163,6 +278,7 @@ def try_download_twitter_api(url: str) -> bool:
     if not date_str:
         date_str = datetime.now().strftime("%Y-%m-%d")
 
+    author = data.get("user_screen_name", author_guess)
     caption_clean = sanitize_filename(data.get("text", "tweet"))
     base_prefix = f"[{date_str}] [{author}] {caption_clean} ({tweet_id})"
 
@@ -194,7 +310,7 @@ def try_download_twitter_api(url: str) -> bool:
                 print(f"     [✓] Video tersimpan: {filename}")
                 success_any = True
         else:
-            orig_url = m_url.split("?")[0] + "?name=orig" if "twimg.com" in m_url else m_url
+            orig_url_media = m_url.split("?")[0] + "?name=orig" if "twimg.com" in m_url else m_url
             ext = "jpg"
             if ".png" in m_url.lower():
                 ext = "png"
@@ -208,11 +324,44 @@ def try_download_twitter_api(url: str) -> bool:
                 success_any = True
                 continue
             print(f"     [*] Mengunduh Foto resolusi asli...")
-            if download_file(orig_url, dest) or download_file(m_url, dest):
+            if download_file(orig_url_media, dest) or download_file(m_url, dest):
                 print(f"     [✓] Foto tersimpan: {filename}")
                 success_any = True
 
     return success_any
+
+
+def try_download_twitter_api(url: str) -> bool:
+    m = re.search(r'status/(\d+)', url)
+    if not m:
+        return False
+    tweet_id = m.group(1)
+
+    # 1. Coba FxTwitter API (Primary - sangat cepat & mendukung Video Amplify/Resolusi Penuh)
+    if try_fxtwitter_api(tweet_id):
+        return True
+
+    # 2. Coba VxTwitter API (Fallback)
+    if try_vxtwitter_api(tweet_id, url):
+        return True
+
+    return False
+
+
+def download_with_gallery_dl(url: str, cookie_file: Path | None) -> bool:
+    cmd = [
+        sys.executable, "-m", "gallery_dl",
+        "-d", str(OUTPUT_DIR),
+        "--no-mtime",
+        url
+    ]
+    if cookie_file:
+        cmd.extend(["--cookies", str(cookie_file)])
+    try:
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", timeout=120)
+        return proc.returncode == 0
+    except Exception:
+        return False
 
 
 def download_with_ytdlp(url: str, ytdlp_bin: str, cookie_file: Path | None) -> bool:
@@ -292,7 +441,11 @@ def main():
 
         ok = try_download_twitter_api(url)
         if not ok:
-            print("     [*] Direct resolver gagal/konten sensitif. Mencoba yt-dlp...")
+            print("     [*] Direct resolver gagal/konten privat. Mencoba gallery-dl...")
+            ok = download_with_gallery_dl(url, cookie_file)
+
+        if not ok:
+            print("     [*] Mencoba yt-dlp...")
             ok = download_with_ytdlp(url, ytdlp_bin, cookie_file)
 
         if ok:
