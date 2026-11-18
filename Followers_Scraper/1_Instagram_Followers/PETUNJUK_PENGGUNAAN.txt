@@ -1,0 +1,59 @@
+================================================================================
+PETUNJUK PENGGUNAAN - INSTAGRAM FOLLOWER & FOLLOWING SCRAPER
+================================================================================
+
+Modul ini berfungsi untuk mengekstrak dan mengunduh seluruh daftar followers
+(pengikut) atau following (yang diikuti) dari profil akun Instagram ke format
+file teks (.txt) dan tabel spreadsheet Excel (.csv).
+
+--------------------------------------------------------------------------------
+LANGKAH CEPAT PENGGUNAAN:
+--------------------------------------------------------------------------------
+
+1. AUTENTIKASI / LOGIN (WAJIB KARENA INSTAGRAM MEMERLUKAN LOGIN):
+   - Klik 2x "BUKA_NOTEPAD_LOGIN.bat"
+   - Salin cookies dari browser Anda (menggunakan ekstensi 'Get cookies.txt LOCALLY'
+     dari Chrome/Edge setelah membuka instagram.com), paste ke Notepad, simpan (Ctrl+S).
+   - Klik 2x "LOGIN_AKUN.bat" untuk memvalidasi sesi akun.
+   *CATATAN: Jika Anda sudah pernah login di folder "Instagram_Downloader",
+             alat ini akan OTOMATIS membaca sesi akun tersebut tanpa perlu login lagi!
+
+2. MENENTUKAN TARGET & PENGATURAN:
+   - Klik 2x "BUKA_INPUT_TARGET.bat".
+   - Isi TARGET_AKUN dengan username atau URL profil yang ingin Anda scrape.
+     (Contoh: cristiano, leomessi, atau https://www.instagram.com/cristiano/)
+   - Atur TIPE_DATA (followers / following).
+   - Atur MAKSIMAL_DATA (0 untuk semua tanpa batas, atau misal 100/500 untuk tes).
+   - Simpan file (Ctrl+S) lalu tutup Notepad.
+
+3. MENJALANKAN SCRAPING:
+   - Klik 2x "JALANKAN_SCRAPER.bat".
+   - Tunggu hingga proses scraping selesai.
+   - Hasil akan tersimpan di dalam folder "Hasil_Scrape/".
+
+--------------------------------------------------------------------------------
+FORMAT HASIL SCRAPING:
+--------------------------------------------------------------------------------
+1. File .TXT (Daftar Username Bersih):
+   Berisi daftar username Instagram baris demi baris, sangat cocok untuk di-copy
+   atau dimasukkan ke tools lain / bot pengirim pesan / mass mention.
+
+2. File .CSV (Tabel Data Lengkap Excel):
+   Berisi tabel spreadsheet rapi dengan kolom:
+   - Nomor Urut
+   - Username
+   - Nama Lengkap (Display Name)
+   - User ID
+   - Status Terverifikasi (Centang Biru)
+   - Status Akun Privat (Ya/Tidak)
+   - Link URL Profil
+   - Link Foto Profil
+
+--------------------------------------------------------------------------------
+TIPS KEAMANAN AKUN:
+--------------------------------------------------------------------------------
+- Jangan mengikis ratusan ribu follower sekaligus dalam satu waktu tanpa jeda.
+- Gunakan jeda default (1.5 detik) yang sudah disediakan.
+- Disarankan menggunakan akun sekunder (dummy/second account) jika melakukan
+  scraping dalam volume yang sangat besar.
+================================================================================

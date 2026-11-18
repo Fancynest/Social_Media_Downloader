@@ -37,6 +37,12 @@ Tool otomatisasi pengunduh media untuk **YouTube, Instagram, X (Twitter), dan Ti
 * **Bypass Cookies:** Mendukung input cookies untuk akun privat atau konten dengan batasan login.
 * **Anti-Duplikat:** Video yang sudah pernah diunduh otomatis dilewati.
 
+### 5. Social Media Followers Scraper
+* **Instagram Followers & Following:** Mengekstrak seluruh daftar pengikut (*followers*) atau akun yang diikuti (*following*) dari akun target ke format **.TXT** (daftar username bersih) dan **.CSV** (tabel spreadsheet Excel lengkap: User ID, Centang Biru, Nama Lengkap, URL Profil, dll).
+* **Auto Session Sync:** Otomatis mendeteksi dan menggunakan sesi login aktif dari folder `Instagram_Downloader/` tanpa perlu login ulang.
+* **Proteksi Anti-Banned:** Dilengkapi random sleep jitter dan jeda istirahat berkala untuk keamanan akun.
+* **Dukungan Platform Lain:** Struktur direktori modular siap diekspansi untuk platform Twitter/X dan TikTok.
+
 ---
 
 ## Struktur Direktori
@@ -112,6 +118,19 @@ Social_Media_Downloader/
 │       ├── input_cookie.txt
 │       └── profile_downloader.py
 │
+├── Followers_Scraper/                        # Scraper Followers & Following Media Sosial
+│   ├── 1_Instagram_Followers/                # Scraper Followers & Following Instagram
+│   │   ├── BUKA_INPUT_TARGET.bat
+│   │   ├── BUKA_NOTEPAD_LOGIN.bat
+│   │   ├── LOGIN_AKUN.bat
+│   │   ├── JALANKAN_SCRAPER.bat
+│   │   ├── PETUNJUK_PENGGUNAAN.txt
+│   │   ├── input_target.txt
+│   │   ├── input_cookie.txt
+│   │   ├── ig_follower_scraper.py
+│   │   └── Hasil_Scrape/
+│   └── README.md
+│
 ├── requirements.txt
 └── README.md
 ```
@@ -148,4 +167,9 @@ Social_Media_Downloader/
 ### TikTok Downloader
 - **Unduh Video Bebas Watermark & Slide Foto:** Masuk ke `TikTok_Downloader/1_Unduh_Banyak_Link/`, buka `BUKA_NOTEPAD_LINK.bat`, tempelkan tautan video/slide TikTok, lalu jalankan `DOWNLOAD_SEKARANG.bat`.
 - **Unduh Semua Video Profil & Rentang Waktu:** Masuk ke `TikTok_Downloader/2_Unduh_Profil_dan_Rentang_Waktu/`, buka `BUKA_NOTEPAD_TARGET.bat`, tentukan rentang tanggal dan tempel username atau link profil (`https://www.tiktok.com/@username`), lalu jalankan `DOWNLOAD_SEKARANG.bat`.
+
+### Followers & Following Scraper
+- **Scrape Followers / Following Instagram:** Masuk ke `Followers_Scraper/1_Instagram_Followers/`, buka `BUKA_INPUT_TARGET.bat` untuk mengatur username target (`TARGET_AKUN`), jenis data (`TIPE_DATA=followers`), dan batas data (`MAKSIMAL_DATA=100` atau `0` untuk semua), lalu klik 2x `JALANKAN_SCRAPER.bat`.
+  *(Jika baru pertama kali dan belum pernah login di Instagram Downloader, jalankan `LOGIN_AKUN.bat` terlebih dahulu).*
+
 

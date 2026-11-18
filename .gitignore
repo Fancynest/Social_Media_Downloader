@@ -1,6 +1,8 @@
-# Hasil download media (hindari upload file video/foto besar ke GitHub)
+# Hasil download media & scrape (hindari upload file video/foto besar & data ke GitHub)
 **/Hasil_Download/
 Hasil_Download/
+**/Hasil_Scrape/
+Hasil_Scrape/
 *.mp4
 *.m4a
 *.webm
