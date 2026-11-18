@@ -3,6 +3,10 @@
 Hasil_Download/
 **/Hasil_Scrape/
 Hasil_Scrape/
+**/Hasil_Analisis/
+Hasil_Analisis/
+riwayat_followers.json
+**/riwayat_followers.json
 *.mp4
 *.m4a
 *.webm

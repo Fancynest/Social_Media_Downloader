@@ -1,0 +1,57 @@
+================================================================================
+PETUNJUK PENGGUNAAN - INSTAGRAM UNFOLLOWERS & FOLLBACK TRACKER
+================================================================================
+
+Fitur ini berfungsi untuk menganalisis akun Instagram Anda secara mendalam:
+1. Menemukan siapa yang Anda follow tapi TIDAK FOLLOW BALIK (Unfollow / Not Following Back).
+2. Menemukan FANS (Akun yang follow Anda, tapi tidak Anda follow balik).
+3. Menemukan MUTUAL (Akun yang saling follow dengan Anda).
+4. Mendeteksi SIAPA YANG BARU SAJA UNFOLLOW akun Anda sejak pengecekan terakhir!
+
+--------------------------------------------------------------------------------
+LANGKAH PENGGUNAAN:
+--------------------------------------------------------------------------------
+
+1. PERSIAPAN LOGIN:
+   - Jika Anda sudah pernah login di folder "Instagram_Downloader" atau
+     "1_Instagram_Followers", Anda TIDAK PERLU LOGIN LAGI! Sesi akun akan otomatis
+     terdeteksi.
+   - Jika belum login:
+     a. Buka "BUKA_NOTEPAD_LOGIN.bat".
+     b. Salin cookies browser Anda (via ekstensi 'Get cookies.txt LOCALLY'),
+        paste ke Notepad, lalu simpan (Ctrl+S).
+     c. Klik 2x "LOGIN_AKUN.bat" untuk memverifikasi.
+
+2. MENJALANKAN PENGECEKAN:
+   - Klik 2x file "CEK_UNFOLLOWERS.bat".
+   - Script akan otomatis mengambil daftar Following dan Followers akun Anda.
+   - Script akan membandingkan kedua data tersebut secara cerdas.
+   - Jika Anda pernah menjalankan tool ini sebelumnya, script akan otomatis
+     membandingkan data lama dan mendeteksi akun siapa saja yang baru unfollow!
+
+--------------------------------------------------------------------------------
+FILE HASIL ANALISIS (FOLDER: Hasil_Analisis/):
+--------------------------------------------------------------------------------
+Hasil pengecekan akan disimpan ke dalam 2 format (.txt dan .csv Excel):
+
+1. tidak_follow_balik.csv & .txt:
+   Daftar akun yang Anda ikuti (Following), tapi mereka TIDAK mengikuti Anda balik.
+   (Inilah yang paling dicari: akun yang diam-diam unfollow Anda atau tidak follback!).
+
+2. fans_tidak_di_follback.csv & .txt:
+   Daftar pengikut Anda yang belum Anda ikuti balik.
+
+3. saling_follow_mutual.csv & .txt:
+   Daftar akun teman yang saling mengikuti satu sama lain.
+
+4. riwayat_unfollow_terbaru.csv & .txt:
+   Daftar akun yang HILANG (telah meng-unfollow Anda) di antara waktu scan sebelumnya
+   dan scan hari ini.
+
+--------------------------------------------------------------------------------
+KEAMANAN & PRIVASI:
+--------------------------------------------------------------------------------
+- Seluruh proses berjalan 100% lokal di komputer Anda.
+- Menggunakan jeda acak yang aman agar akun terhindar dari checkpoint Instagram.
+- File snapshot riwayat disimpan secara lokal di komputer Anda dan tidak diunggah ke internet.
+================================================================================

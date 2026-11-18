@@ -129,6 +129,15 @@ Social_Media_Downloader/
 │   │   ├── input_cookie.txt
 │   │   ├── ig_follower_scraper.py
 │   │   └── Hasil_Scrape/
+│   │
+│   ├── 2_Instagram_Unfollowers_Tracker/      # Deteksi Unfollower & Yang Tidak Follow Back
+│   │   ├── BUKA_NOTEPAD_LOGIN.bat
+│   │   ├── LOGIN_AKUN.bat
+│   │   ├── CEK_UNFOLLOWERS.bat
+│   │   ├── PETUNJUK_PENGGUNAAN.txt
+│   │   ├── ig_unfollowers_tracker.py
+│   │   └── Hasil_Analisis/
+│   │
 │   └── README.md
 │
 ├── requirements.txt
@@ -171,5 +180,7 @@ Social_Media_Downloader/
 ### Followers & Following Scraper
 - **Scrape Followers / Following Instagram:** Masuk ke `Followers_Scraper/1_Instagram_Followers/`, buka `BUKA_INPUT_TARGET.bat` untuk mengatur username target (`TARGET_AKUN`), jenis data (`TIPE_DATA=followers`), dan batas data (`MAKSIMAL_DATA=100` atau `0` untuk semua), lalu klik 2x `JALANKAN_SCRAPER.bat`.
   *(Jika baru pertama kali dan belum pernah login di Instagram Downloader, jalankan `LOGIN_AKUN.bat` terlebih dahulu).*
+- **Cek Siapa yang Unfollow & Tidak Follback:** Masuk ke `Followers_Scraper/2_Instagram_Unfollowers_Tracker/`, lalu cukup klik 2x `CEK_UNFOLLOWERS.bat`. Script akan langsung menganalisis siapa yang tidak mem-follback Anda serta mendeteksi siapa yang baru saja meng-unfollow Anda sejak pengecekan sebelumnya!
+
 
 
