@@ -42,10 +42,47 @@ from instaloader.exceptions import (
 
 def _patch_instaloader():
     """
-    Patch Instaloader GraphQL endpoint dan fallback parsing HTML profil:
-    1. Arahkan query doc_id GraphQL ke /api/graphql agar terhindar dari error 400 feedback_required.
-    2. Fallback Profile.from_username jika terkena checkpoint/sensitif.
+    Patch Instaloader Context dan Profile:
+    1. Patch _web_api_tokens agar tidak melempar BadResponseException jika fb_dtsg belum termuat.
+    2. Patch Profile.from_username agar selalu menormalkan metadata node (_normalize_profile_data),
+       sehingga KeyError 'edge_follow' / 'edge_followed_by' tidak pernah terjadi.
     """
+    # 1. Patch _web_api_tokens
+    def patched_web_api_tokens(self):
+        try:
+            sessionid = self._session.cookies.get_dict().get("sessionid", "")
+            if sessionid not in self._web_api_tokens_cache:
+                html = self._get_page(self._session, "")
+                tokens = {}
+                for name, patterns in [
+                    ("fb_dtsg", [
+                        r'"DTSGInitialData",\[\],\{[^{}]*"token":"([^"]+)"',
+                        r'"DTSGInitData",\[\],\{[^{}]*"token":"([^"]+)"',
+                        r'"token":"([a-zA-Z0-9_\-]+:\d+:\d+)"',
+                        r'"dtsg":\{"token":"([^"]+)"',
+                    ]),
+                    ("lsd", [
+                        r'"LSD",\[\],\{[^{}]*"token":"([^"]+)"',
+                        r'"token":"([a-zA-Z0-9_\-]+)"',
+                    ]),
+                    ("av", [
+                        r'"IG_USER_EIMU":"?(\d+)',
+                        r'"actor_id":"?(\d+)',
+                    ]),
+                ]:
+                    for pattern in patterns:
+                        m = re.search(pattern, html)
+                        if m:
+                            tokens[name] = m.group(1)
+                            break
+                self._web_api_tokens_cache[sessionid] = tokens
+            return self._web_api_tokens_cache.get(sessionid, {})
+        except Exception:
+            return {}
+
+    instaloader.InstaloaderContext._web_api_tokens = patched_web_api_tokens
+
+    # 2. Patch doc_id_graphql_query
     orig_doc_id = instaloader.InstaloaderContext.doc_id_graphql_query
 
     def patched_doc_id(self, doc_id: str, variables: dict, referer: Optional[str] = None, web_api: bool = True):
@@ -53,11 +90,13 @@ def _patch_instaloader():
 
     instaloader.InstaloaderContext.doc_id_graphql_query = patched_doc_id
 
+    # 3. Patch Profile.from_username
     orig_from_username = instaloader.Profile.from_username
 
     def patched_from_username(cls, context, username: str):
+        profile = None
         try:
-            return orig_from_username(context, username)
+            profile = orig_from_username(context, username)
         except ProfileNotExistsException:
             if not context.is_logged_in:
                 raise
@@ -78,11 +117,55 @@ def _patch_instaloader():
             if m_pid:
                 pid = m_pid[0]
                 node = {"id": str(pid), "pk": int(pid), "username": username.lower()}
-                return cls(context, node)
+                profile = cls(context, node)
+            else:
+                raise ProfileNotExistsException(f"Profil @{username} tidak ditemukan.")
 
-            raise ProfileNotExistsException(f"Profil @{username} tidak ditemukan.")
+        if profile and hasattr(profile, "_node") and isinstance(profile._node, dict):
+            profile._node = cls._normalize_profile_data(profile._node)
+            profile._has_full_metadata = True
+
+        return profile
 
     instaloader.Profile.from_username = classmethod(patched_from_username)
+
+    # 4. Patch test_login agar tidak menggunakan query_hash legacy GraphQL (yang error 400 feedback_required)
+    def patched_test_login(self) -> Optional[str]:
+        cookie_dict = self._session.cookies.get_dict()
+        if not cookie_dict.get("sessionid"):
+            return None
+
+        target_name = getattr(self, "username", "") or ""
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        try:
+            resp = self._session.get("https://www.instagram.com/", headers=headers, timeout=12, allow_redirects=True)
+            if "accounts/login" in resp.url.lower():
+                return None
+
+            idx = resp.text.find('["PolarisViewer"')
+            if idx != -1:
+                snippet = resp.text[idx : idx + 4000]
+                m = re.search(r'"username":"([^"]+)"', snippet)
+                if m:
+                    self.username = m.group(1)
+                    return m.group(1)
+
+            m_viewer = re.search(r'"viewer":\s*\{[^}]*?"username":"([^"]+)"', resp.text)
+            if m_viewer:
+                self.username = m_viewer.group(1)
+                return m_viewer.group(1)
+
+            if resp.status_code == 200 and cookie_dict.get("ds_user_id"):
+                return target_name or f"user_{cookie_dict.get('ds_user_id')}"
+        except Exception:
+            pass
+
+        return target_name if target_name else None
+
+    instaloader.InstaloaderContext.test_login = patched_test_login
 
 
 _patch_instaloader()
@@ -536,7 +619,7 @@ def prompt_user_target() -> dict:
 
 
 def scrape_instagram_connections(loader: instaloader.Instaloader, cfg: dict):
-    """Menjalankan proses scraping followers / following."""
+    """Menjalankan proses scraping followers / following menggunakan REST API Instagram."""
     targets = cfg["targets"]
     tipe_data = cfg.get("tipe_data", "followers")
     maksimal_data = cfg.get("maksimal_data", 100)
@@ -554,12 +637,22 @@ def scrape_instagram_connections(loader: instaloader.Instaloader, cfg: dict):
     print(f"Target Akun   : {len(targets)} akun ({', '.join(targets)})")
     print(f"Tipe Data     : {label_tipe}")
     print(f"Maksimal Data : {'Semua (Tanpa batas)' if maksimal_data == 0 else f'{maksimal_data} per akun'}")
-    print(f"Jeda Istirahat: ~{jeda_detik} detik per data")
+    print(f"Jeda Istirahat: ~{jeda_detik} detik")
     print(f"Format Output : {fmt.upper()}")
     print(f"Folder Output : {OUTPUT_DIR.resolve()}")
     print("=" * 65 + "\n")
 
     summary = []
+
+    # Siapkan requests.Session yang mewarisi cookies dari Instaloader
+    session = requests.Session()
+    session.cookies.update(loader.context._session.cookies)
+
+    csrf = ""
+    for c in session.cookies:
+        if c.name == "csrftoken":
+            csrf = c.value
+            break
 
     for idx, target in enumerate(targets, start=1):
         print(f"[{idx}/{len(targets)}] Memproses target: @{target}")
@@ -584,25 +677,21 @@ def scrape_instagram_connections(loader: instaloader.Instaloader, cfg: dict):
         except Exception:
             total_est = 0
 
-        # Siapkan generator data
-        try:
-            if tipe_data == "followers":
-                iterator = profile.get_followers()
-            else:
-                iterator = profile.get_followees()
-        except PrivateProfileNotFollowedException:
-            print(f"     [!] Profil @{target} bersifat privat dan akun Anda belum mem-follow akun ini.")
-            print("         Instagram tidak mengizinkan melihat pengikut akun privat yang belum difollow.\n")
-            summary.append({"target": target, "status": "Privat (Belum difollow)", "count": 0})
-            continue
-        except LoginRequiredException:
-            print("     [x] Sesi login diperlukan untuk melihat daftar pengikut.")
-            summary.append({"target": target, "status": "Login diperlukan", "count": 0})
-            return
-        except Exception as e:
-            print(f"     [x] Gagal mengakses daftar {label_tipe}: {e}\n")
-            summary.append({"target": target, "status": f"Gagal: {e}", "count": 0})
-            continue
+        target_id = str(profile.userid)
+        headers = {
+            "x-ig-app-id": "936619743392459",
+            "x-asbd-id": "359341",
+            "x-csrftoken": csrf,
+            "x-requested-with": "XMLHttpRequest",
+            "referer": f"https://www.instagram.com/{profile.username}/",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "accept": "*/*",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+        }
 
         # Inisialisasi file output
         txt_file = OUTPUT_DIR / f"{target}_{file_suffix}.txt"
@@ -636,18 +725,72 @@ def scrape_instagram_connections(loader: instaloader.Instaloader, cfg: dict):
         count = 0
         max_disp = str(maksimal_data) if maksimal_data > 0 else f"semua ({total_est:,})"
         consecutive_rate_limits = 0
+        base_url = f"https://www.instagram.com/api/v1/friendships/{target_id}/{tipe_data}/"
+        max_id = None
+        is_finished = False
 
         try:
-            for item in iterator:
+            while not is_finished:
+                params = {"count": 50}
+                if tipe_data == "followers":
+                    params["search_surface"] = "follow_list_page"
+                if max_id:
+                    params["max_id"] = str(max_id)
+
                 try:
+                    resp = session.get(base_url, headers=headers, params=params, timeout=30)
+                except Exception as req_err:
+                    print(f"\n     [!] Masalah jaringan saat mengambil data: {req_err}")
+                    break
+
+                if resp.status_code == 429:
+                    consecutive_rate_limits += 1
+                    if consecutive_rate_limits > 2:
+                        print("\n     [!] Instagram memberlakukan pembatasan frekuensi (Rate Limit 429).")
+                        print(f"     [!] Menyimpan {count:,} data yang telah didapat...")
+                        break
+                    wait_sec = 25 * consecutive_rate_limits
+                    print(f"\n     [!] Terkena rate limit (429). Menunggu jeda pendinginan {wait_sec} detik...")
+                    time.sleep(wait_sec)
+                    continue
+
+                if resp.status_code != 200:
+                    err_msg = ""
+                    try:
+                        err_msg = resp.json().get("message", "")
+                    except Exception:
+                        pass
+                    if resp.status_code == 400 and "checkpoint" in err_msg.lower():
+                        print(f"\n     [!] Akun memerlukan verifikasi checkpoint Instagram.")
+                    elif resp.status_code == 403 or "not authorized" in err_msg.lower():
+                        print(f"\n     [!] Tidak diizinkan mengakses data target @{target} (Akun Privat / Belum di-follow).")
+                    else:
+                        print(f"\n     [!] Gagal mengambil {label_tipe} (HTTP {resp.status_code}): {err_msg or resp.reason}")
+                    break
+
+                consecutive_rate_limits = 0
+
+                try:
+                    data = resp.json()
+                except Exception:
+                    print(f"\n     [!] Respons server bukan JSON yang valid.")
+                    break
+
+                users = data.get("users", [])
+                if not users:
+                    break
+
+                for u in users:
                     count += 1
-                    u_name = item.username
-                    f_name = getattr(item, "full_name", "") or ""
-                    u_id = getattr(item, "userid", "") or ""
-                    is_verif = "Ya" if getattr(item, "is_verified", False) else "Tidak"
-                    is_priv = "Ya" if getattr(item, "is_private", False) else "Tidak"
+                    u_name = u.get("username", "")
+                    if not u_name:
+                        continue
+                    f_name = u.get("full_name", "") or ""
+                    u_id = str(u.get("pk") or u.get("id") or "")
+                    is_verif = "Ya" if u.get("is_verified") else "Tidak"
+                    is_priv = "Ya" if u.get("is_private") else "Tidak"
                     p_url = f"https://www.instagram.com/{u_name}/"
-                    pic_url = getattr(item, "profile_pic_url", "") or ""
+                    pic_url = u.get("profile_pic_url", "") or ""
 
                     # Tulis ke file TXT & CSV secara instan (auto flush)
                     if txt_fp:
@@ -674,28 +817,18 @@ def scrape_instagram_connections(loader: instaloader.Instaloader, cfg: dict):
                     # Berhenti jika batas maksimal tercapai
                     if 0 < maksimal_data <= count:
                         print(f"     [✓] Selesai: Telah mencapai batas target {maksimal_data} data.")
+                        is_finished = True
                         break
 
-                    # Jeda pernapasan berkala setiap 50 data
-                    if count % 50 == 0:
-                        extra_sleep = random.uniform(3.0, 5.0)
-                        print(f"     [*] Istirahat jeda pengaman: {extra_sleep:.1f} detik...")
-                        time.sleep(extra_sleep)
-                    else:
-                        sleep_time = random.uniform(jeda_detik * 0.8, jeda_detik * 1.3)
-                        time.sleep(sleep_time)
+                if is_finished:
+                    break
 
-                    consecutive_rate_limits = 0
+                max_id = data.get("next_max_id")
+                if not max_id:
+                    break
 
-                except TooManyRequestsException:
-                    consecutive_rate_limits += 1
-                    if consecutive_rate_limits > 2:
-                        print("\n     [!] Instagram mendeteksi query terlalu sering (Rate limit berulang).")
-                        print("         Menyimpan data yang telah berhasil dikumpulkan untuk menjaga keamanan akun...")
-                        break
-                    print("\n     [!] Terkena rate limit Instagram. Menunggu 45 detik untuk pendinginan...")
-                    time.sleep(45)
-                    continue
+                sleep_time = random.uniform(max(0.5, jeda_detik * 0.8), max(1.0, jeda_detik * 1.4))
+                time.sleep(sleep_time)
 
         except KeyboardInterrupt:
             print(f"\n     [!] Dihentikan oleh pengguna (Ctrl+C). Menyimpan {count} data yang telah terkumpul...")
@@ -719,7 +852,7 @@ def scrape_instagram_connections(loader: instaloader.Instaloader, cfg: dict):
 
         summary.append({
             "target": target,
-            "status": "Sukses",
+            "status": "Sukses" if count > 0 else "Selesai",
             "count": count,
             "txt": txt_file.name if fmt in ("semua", "txt") else None,
             "csv": csv_file.name if fmt in ("semua", "csv") else None,
