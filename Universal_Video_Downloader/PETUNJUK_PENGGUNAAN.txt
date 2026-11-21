@@ -1,0 +1,26 @@
+================================================================================
+PETUNJUK PENGGUNAAN - UNIVERSAL WEB VIDEO DOWNLOADER (IDM STYLE)
+================================================================================
+
+Alat ini dapat mengunduh video dari ribuan situs web video dan platform streaming
+dengan format MP4 dan kualitas terbaik (Video HD/4K + Audio jernih).
+
+--------------------------------------------------------------------------------
+CARA MENGGUNAKAN:
+--------------------------------------------------------------------------------
+1. Klik 2x file 'BUKA_INPUT_LINK.bat'.
+2. Tempelkan (paste) semua URL / link video yang ingin Anda unduh (satu link per baris).
+3. Simpan file (Ctrl + S) lalu tutup Notepad.
+4. Klik 2x file 'UNDUH_VIDEO.bat'.
+5. Video akan otomatis diunduh dan tersimpan rapi di dalam folder 'Hasil_Download'.
+
+--------------------------------------------------------------------------------
+CATATAN TAMBAHAN:
+--------------------------------------------------------------------------------
+- Jika situs web membutuhkan login atau verifikasi umur:
+  1. Pasang ekstensi browser 'Get cookies.txt LOCALLY' di Chrome/Edge/Firefox.
+  2. Buka situs yang bersangkutan, ekspor cookies.
+  3. Klik 2x 'BUKA_INPUT_COOKIE.bat', paste teks cookies lalu simpan (Ctrl + S).
+- Skrip ini otomatis mengingat video yang sudah pernah diunduh ('download_history.txt'),
+  sehingga jika Anda menjalankan ulang, video lama tidak akan diunduh dobel.
+================================================================================
