@@ -37,7 +37,22 @@ Tool otomatisasi pengunduh media untuk **YouTube, Instagram, X (Twitter), dan Ti
 * **Bypass Cookies:** Mendukung input cookies untuk akun privat atau konten dengan batasan login.
 * **Anti-Duplikat:** Video yang sudah pernah diunduh otomatis dilewati.
 
-### 5. Social Media Followers Scraper
+### 5. Universal Video Downloader (1000+ Situs Tube/Dewasa/Web)
+* **Dukungan Luas:** Mendukung ribuan situs video termasuk BoyfriendTV, xHamster, Pornhub, Xvideos, Dailymotion, Vimeo, Bilibili, Facebook, dll.
+* **Auto Domain Normalization:** Otomatis mengubah mirror/proxy domain seperti `xhsocial.com` menjadi domain extractor resmi (`xhamster.com`).
+* **Bypass Cloudflare Anti-Bot:** Menggunakan impersonasi TLS browser Chrome via `curl_cffi` untuk menembus proteksi Cloudflare Turnstile/Bot Protection.
+* **Akselerasi 16-Thread:** Mengunduh fragmentasi video dengan 16 concurrent threads (`-N 16`), buffer 64K, dan http chunk size 10M untuk kecepatan maksimum.
+* **Anti-Duplikat & Resume:** Otomatis mendeteksi file yang sudah pernah diunduh dan mencatat riwayat ke `download_history.txt`.
+
+### 6. TeraBox Master Downloader (16-Thread Accelerated)
+* **Kualitas Asli Master (Lossless Bit-for-Bit):** Mengunduh file biner mentah asli (*dlink*) langsung dari bucket penyimpanan TeraBox tanpa re-encoding/kompresi ulang, resolusi asli 1080p/4K bitrate utuh.
+* **Bypass Cloudflare & Verifikasi Bot:** Menggunakan `curl_cffi` dengan TLS Chrome fingerprint untuk mengekstrak token dinamis `jsToken` dan `dp-logid` langsung dari HTML halaman share.
+* **Dukungan Domain TeraBox Lengkap:** Mendukung `terabox.com`, `teraboxapp.com`, `1024tera.com`, `terafileshare.com`, `mirrobox.com`, `nephobox.com`, `terabox.link`, serta share link dengan proteksi kata sandi (`pwd`).
+* **Akselerasi 16-Thread Parallel (aria2c):** Membagi unduhan file menjadi 16 koneksi simultan untuk menyerap bandwidth internet hingga batas maksimal.
+* **Fallback Chunked Streaming:** Otomatis beralih ke engine streaming chunked Python dengan resume jika `aria2c` tidak tersedia.
+* **Mendukung Cookie Akun:** Mendukung cookie `ndus` untuk file besar di atas 500MB - puluhan GB.
+
+### 7. Social Media Followers Scraper
 * **Instagram Followers & Following:** Mengekstrak seluruh daftar pengikut (*followers*) atau akun yang diikuti (*following*) dari akun target ke format **.TXT** (daftar username bersih) dan **.CSV** (tabel spreadsheet Excel lengkap: User ID, Centang Biru, Nama Lengkap, URL Profil, dll).
 * **Auto Session Sync:** Otomatis mendeteksi dan menggunakan sesi login aktif dari folder `Instagram_Downloader/` tanpa perlu login ulang.
 * **Proteksi Anti-Banned:** Dilengkapi random sleep jitter dan jeda istirahat berkala untuk keamanan akun.
@@ -118,6 +133,24 @@ Social_Media_Downloader/
 │       ├── input_cookie.txt
 │       └── profile_downloader.py
 │
+├── Universal_Video_Downloader/               # Unduh 1000+ Situs Web/Tube/Dewasa (16 Threads)
+│   ├── BUKA_INPUT_LINK.bat
+│   ├── BUKA_INPUT_COOKIE.bat
+│   ├── UNDUH_VIDEO.bat
+│   ├── PETUNJUK_PENGGUNAAN.txt
+│   ├── input_links.txt
+│   ├── input_cookie.txt
+│   └── universal_downloader.py
+│
+├── TeraBox_Downloader/                       # Unduh TeraBox Master Original Lossless (16 Threads)
+│   ├── BUKA_INPUT_LINK.bat
+│   ├── BUKA_INPUT_COOKIE.bat
+│   ├── UNDUH_TERABOX.bat
+│   ├── PETUNJUK_PENGGUNAAN.txt
+│   ├── input_links.txt
+│   ├── input_cookie.txt
+│   └── terabox_downloader.py
+│
 ├── Followers_Scraper/                        # Scraper Followers & Following Media Sosial
 │   ├── 1_Instagram_Followers/                # Scraper Followers & Following Instagram
 │   │   ├── BUKA_INPUT_TARGET.bat
@@ -176,6 +209,14 @@ Social_Media_Downloader/
 ### TikTok Downloader
 - **Unduh Video Bebas Watermark & Slide Foto:** Masuk ke `TikTok_Downloader/1_Unduh_Banyak_Link/`, buka `BUKA_NOTEPAD_LINK.bat`, tempelkan tautan video/slide TikTok, lalu jalankan `DOWNLOAD_SEKARANG.bat`.
 - **Unduh Semua Video Profil & Rentang Waktu:** Masuk ke `TikTok_Downloader/2_Unduh_Profil_dan_Rentang_Waktu/`, buka `BUKA_NOTEPAD_TARGET.bat`, tentukan rentang tanggal dan tempel username atau link profil (`https://www.tiktok.com/@username`), lalu jalankan `DOWNLOAD_SEKARANG.bat`.
+
+### Universal Video Downloader (1000+ Situs Tube/Dewasa/Web)
+- **Unduh Video Satuan / Massal:** Masuk ke `Universal_Video_Downloader/`, buka `BUKA_INPUT_LINK.bat`, tempelkan tautan video (BoyfriendTV, xHamster, Pornhub, Facebook, Vimeo, dll), lalu jalankan `UNDUH_VIDEO.bat`.
+- **Akselerasi & Cookies:** Unduhan menggunakan fragmentasi 16-thread (`-N 16`). Jika situs memerlukan login / verifikasi, tempel cookies di `BUKA_INPUT_COOKIE.bat`.
+
+### TeraBox Master Downloader (16-Thread Accelerated)
+- **Unduh Video & File Kualitas Master Asli (Lossless):** Masuk ke `TeraBox_Downloader/`, buka `BUKA_INPUT_LINK.bat`, tempelkan tautan TeraBox (`terabox.com/s/...`, `1024tera.com/s/...`, dll), lalu klik ganda `UNDUH_TERABOX.bat`.
+- **File Besar (>500MB) & Akun:** Jika mengunduh file besar atau link private, buka `BUKA_INPUT_COOKIE.bat` dan masukkan cookie `ndus=...` akun TeraBox Anda.
 
 ### Followers & Following Scraper
 - **Scrape Followers / Following Instagram:** Masuk ke `Followers_Scraper/1_Instagram_Followers/`, buka `BUKA_INPUT_TARGET.bat` untuk mengatur username target (`TARGET_AKUN`), jenis data (`TIPE_DATA=followers`), dan batas data (`MAKSIMAL_DATA=100` atau `0` untuk semua), lalu klik 2x `JALANKAN_SCRAPER.bat`.

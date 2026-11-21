@@ -1,0 +1,45 @@
+=====================================================================
+PETUNJUK PENGGUNAAN TERABOX MASTER DOWNLOADER
+=====================================================================
+
+Modul ini dibuat khusus untuk mengunduh berkas video, foto, dan dokumen
+dari TeraBox dengan kualitas tertinggi (Master Asli / Lossless bit-for-bit)
+tanpa kompresi ulang, serta diakselerasi dengan 16 parallel thread.
+
+---------------------------------------------------------------------
+CARA MENGGUNAKAN:
+---------------------------------------------------------------------
+1. Buka file "input_links.txt" (Bisa klik ganda "BUKA_INPUT_LINK.bat").
+2. Tempelkan satu atau banyak tautan TeraBox (satu link per baris).
+3. Simpan (Ctrl + S) dan tutup Notepad.
+4. (Opsional untuk file >500MB): Buka "BUKA_INPUT_COOKIE.bat", masukkan
+   cookie `ndus=...` akun Anda jika mengunduh file besar.
+5. Klik ganda "UNDUH_TERABOX.bat" untuk memulai unduhan super cepat!
+6. Semua file yang selesai diunduh akan otomatis tersimpan rapi di:
+   Hasil_Download/
+
+---------------------------------------------------------------------
+FORMAT TAUTAN YANG DIDUKUNG:
+---------------------------------------------------------------------
+- https://terabox.com/s/1xxxxxx
+- https://teraboxapp.com/s/1xxxxxx
+- https://1024tera.com/s/1xxxxxx
+- https://terafileshare.com/s/1xxxxxx
+- https://mirrobox.com/s/1xxxxxx
+- https://nephobox.com/s/1xxxxxx
+- https://www.terabox.app/sharing/link?surl=xxxxxx
+- Tautan dengan password: https://.../s/1xxx?pwd=abcd (atau masukkan sandi saat diminta di terminal).
+
+---------------------------------------------------------------------
+KEUNGGULAN UTAMA:
+---------------------------------------------------------------------
+1. KUALITAS ASLI (MASTER LOSSLESS): Mengambil file mentah asli (dlink)
+   langsung dari server penyimpanan, bukan versi transcode web.
+2. BYPASS CLOUDFLARE BOT: Menggunakan TLS Chrome Impersonation
+   (curl_cffi) untuk mengekstrak token dinamis (jsToken) secara otomatis.
+3. AKSELERASI 16 THREAD (aria2c): Mengunduh dengan 16 fragmentasi paralel
+   simultan sehingga bandwidth internet Anda digunakan secara maksimal.
+4. RESUME OTOMATIS: Jika koneksi terputus, unduhan dapat dilanjutkan
+   tanpa harus mengulang dari nol.
+5. ANTI DUPLIKAT: Riwayat unduhan otomatis dicatat di download_history.txt.
+=====================================================================
