@@ -182,6 +182,7 @@ def main():
             "--fragment-retries", "5",
             "--download-archive", str(ARCHIVE_FILE),
             "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "--extractor-args", "generic:impersonate",
             "-f", "bestvideo*+bestaudio/best",
             "--merge-output-format", "mp4",
             "-o", str(OUTPUT_DIR / "%(extractor_key)s" / "%(title)s [%(id)s].%(ext)s"),
