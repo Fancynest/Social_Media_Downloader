@@ -24,6 +24,9 @@ input_cookie.txt
 cookies.txt
 **/.cookies_active.txt
 .cookies_active.txt
+**/input_links.txt
+input_links.txt
+*.bak
 
 # File sementara & cache Python
 *.tmp

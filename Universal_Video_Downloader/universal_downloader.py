@@ -74,6 +74,20 @@ def prepare_clean_cookie_file() -> Optional[Path]:
     return None
 
 
+def clean_url(url: str) -> str:
+    """Membersihkan dan menormalkan URL mirror ke domain utama extractor."""
+    cleaned = url.strip().strip("\"' ")
+    # Normalisasi mirror domain xhamster (xhsocial, xhwide, xhopen, xhamsterXX) ke domain utama xhamster.com
+    # agar extractor bawaan yt-dlp aktif dan tidak terkena 403 Forbidden
+    cleaned = re.sub(
+        r'https?://(?:www\.)?(?:xhsocial|xhwide|xhopen|xhamster\d+)\.com/',
+        'https://xhamster.com/',
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    return cleaned
+
+
 def load_links() -> List[str]:
     """Membaca daftar URL dari input_links.txt."""
     ensure_templates()
@@ -83,8 +97,7 @@ def load_links() -> List[str]:
             raw = line.strip()
             if not raw or raw.startswith("#"):
                 continue
-            # Bersihkan spasi dan kutip
-            cleaned = raw.strip("\"' ")
+            cleaned = clean_url(raw)
             if cleaned.startswith("http://") or cleaned.startswith("https://"):
                 if cleaned not in links:
                     links.append(cleaned)
@@ -114,7 +127,7 @@ def prompt_links_interactively() -> List[str]:
     entered = []
     while True:
         try:
-            line = input("> ").strip().strip("\"' ")
+            line = clean_url(input("> "))
             if not line:
                 break
             if line.startswith("http://") or line.startswith("https://"):
@@ -169,6 +182,7 @@ def main():
             "--retries", "3",
             "--fragment-retries", "5",
             "--download-archive", str(ARCHIVE_FILE),
+            "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
             "-f", "bestvideo*+bestaudio/best",
             "--merge-output-format", "mp4",
             "-o", str(OUTPUT_DIR / "%(extractor_key)s" / "%(title)s [%(id)s].%(ext)s"),
