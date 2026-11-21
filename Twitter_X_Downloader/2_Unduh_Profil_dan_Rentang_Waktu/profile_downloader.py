@@ -176,7 +176,9 @@ def download_profile(username: str, dari_tanggal: str, sampai_tanggal: str, cook
         for line in proc.stdout:
             s_line = line.strip()
             if s_line:
-                if "#" in s_line or "Downloading" in s_line or ".mp4" in s_line or ".jpg" in s_line or ".png" in s_line:
+                if any(k in s_line.lower() for k in ("#", "downloading", ".mp4", ".jpg", ".png", "error", "warning", "auth")):
+                    print(f"    {s_line}")
+                elif s_line.startswith(("#", ">", "[", ".")):
                     print(f"    {s_line}")
         proc.wait()
         return proc.returncode == 0
