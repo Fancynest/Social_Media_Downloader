@@ -184,7 +184,7 @@ def main():
             "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
             "--extractor-args", "generic:impersonate",
             "-N", "16",
-            "--buffersize", "64K",
+            "--buffer-size", "64K",
             "--http-chunk-size", "10M",
             "-f", "bestvideo*+bestaudio/best",
             "--merge-output-format", "mp4",
