@@ -183,7 +183,7 @@ def main():
             "--download-archive", str(ARCHIVE_FILE),
             "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
             "--extractor-args", "generic:impersonate",
-            "-N", "8",
+            "-N", "16",
             "--buffersize", "64K",
             "--http-chunk-size", "10M",
             "-f", "bestvideo*+bestaudio/best",
