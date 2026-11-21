@@ -9,7 +9,6 @@ Mendukung unduhan banyak link (batch), resume, bypass cookie, dan merge kualitas
 import os
 import sys
 import re
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional, List
