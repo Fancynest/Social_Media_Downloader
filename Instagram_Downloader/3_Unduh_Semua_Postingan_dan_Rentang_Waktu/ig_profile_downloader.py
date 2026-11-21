@@ -40,9 +40,48 @@ from instaloader.exceptions import (
 
 def _patch_instaloader():
     """
-    1. Arahkan query doc_id GraphQL ke /api/graphql agar tidak terkena 400 feedback_required / 302.
-    2. Fallback Profile.from_username dengan sesi login untuk akun dengan konten restricted / sensitif / batas usia.
+    Patch Instaloader Context dan Profile:
+    1. Patch _web_api_tokens agar tidak melempar BadResponseException jika fb_dtsg belum termuat.
+    2. Patch doc_id_graphql_query agar selalu menggunakan web_api=True.
+    3. Patch Profile.from_username agar selalu menormalkan metadata node (_normalize_profile_data).
+    4. Patch test_login agar mendeteksi sesi web langsung tanpa query_hash legacy GraphQL.
     """
+    # 1. Patch _web_api_tokens
+    def patched_web_api_tokens(self):
+        try:
+            sessionid = self._session.cookies.get_dict().get("sessionid", "")
+            if sessionid not in self._web_api_tokens_cache:
+                html = self._get_page(self._session, "")
+                tokens = {}
+                for name, patterns in [
+                    ("fb_dtsg", [
+                        r'"DTSGInitialData",\[\],\{[^{}]*"token":"([^"]+)"',
+                        r'"DTSGInitData",\[\],\{[^{}]*"token":"([^"]+)"',
+                        r'"token":"([a-zA-Z0-9_\-]+:\d+:\d+)"',
+                        r'"dtsg":\{"token":"([^"]+)"',
+                    ]),
+                    ("lsd", [
+                        r'"LSD",\[\],\{[^{}]*"token":"([^"]+)"',
+                        r'"token":"([a-zA-Z0-9_\-]+)"',
+                    ]),
+                    ("av", [
+                        r'"IG_USER_EIMU":"?(\d+)',
+                        r'"actor_id":"?(\d+)',
+                    ]),
+                ]:
+                    for pattern in patterns:
+                        m = re.search(pattern, html)
+                        if m:
+                            tokens[name] = m.group(1)
+                            break
+                self._web_api_tokens_cache[sessionid] = tokens
+            return self._web_api_tokens_cache.get(sessionid, {})
+        except Exception:
+            return {}
+
+    instaloader.InstaloaderContext._web_api_tokens = patched_web_api_tokens
+
+    # 2. Patch doc_id_graphql_query
     orig_doc_id = instaloader.InstaloaderContext.doc_id_graphql_query
 
     def patched_doc_id(self, doc_id: str, variables: dict, referer: Optional[str] = None, web_api: bool = True):
@@ -50,12 +89,14 @@ def _patch_instaloader():
 
     instaloader.InstaloaderContext.doc_id_graphql_query = patched_doc_id
 
+    # 3. Patch Profile.from_username
     orig_from_username = instaloader.Profile.from_username
 
     def patched_from_username(cls, context, username: str):
+        profile = None
         try:
-            return orig_from_username(context, username)
-        except ProfileNotExistsException:
+            profile = orig_from_username(context, username)
+        except Exception:
             if not context.is_logged_in:
                 raise
             try:
@@ -75,9 +116,55 @@ def _patch_instaloader():
             if m_pid:
                 pid = m_pid[0]
                 node = {"id": str(pid), "pk": int(pid), "username": username.lower()}
-                return cls(context, node)
+                profile = cls(context, node)
+            else:
+                raise ProfileNotExistsException(f"Profile {username} does not exist.")
 
-            raise ProfileNotExistsException(f"Profile {username} does not exist.")
+        if profile and hasattr(profile, "_node") and isinstance(profile._node, dict):
+            profile._node = cls._normalize_profile_data(profile._node)
+            profile._has_full_metadata = True
+
+        return profile
+
+    instaloader.Profile.from_username = classmethod(patched_from_username)
+
+    # 4. Patch test_login agar mendeteksi sesi web langsung
+    def patched_test_login(self) -> Optional[str]:
+        cookie_dict = self._session.cookies.get_dict()
+        if not cookie_dict.get("sessionid"):
+            return None
+
+        target_name = getattr(self, "username", "") or ""
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        try:
+            resp = self._session.get("https://www.instagram.com/", headers=headers, timeout=12, allow_redirects=True)
+            if "accounts/login" in resp.url.lower():
+                return None
+
+            idx = resp.text.find('["PolarisViewer"')
+            if idx != -1:
+                snippet = resp.text[idx : idx + 4000]
+                m = re.search(r'"username":"([^"]+)"', snippet)
+                if m:
+                    self.username = m.group(1)
+                    return m.group(1)
+
+            m_viewer = re.search(r'"viewer":\s*\{[^}]*?"username":"([^"]+)"', resp.text)
+            if m_viewer:
+                self.username = m_viewer.group(1)
+                return m_viewer.group(1)
+
+            if resp.status_code == 200 and cookie_dict.get("ds_user_id"):
+                return target_name or f"user_{cookie_dict.get('ds_user_id')}"
+        except Exception:
+            pass
+
+        return target_name if target_name else None
+
+    instaloader.InstaloaderContext.test_login = patched_test_login
 
     instaloader.Profile.from_username = classmethod(patched_from_username)
 
