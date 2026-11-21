@@ -2,7 +2,8 @@
 TeraBox Master Downloader
 Mengunduh file video, foto, dan dokumen dari TeraBox dengan kualitas asli (Master Original/Lossless),
 menggunakan curl_cffi Chrome impersonation untuk bypass Cloudflare/verifikasi bot,
-dan akselerasi unduhan 16 thread (aria2c multi-connection).
+akselerasi unduhan 16 thread (aria2c multi-connection),
+serta mendukung penelusuran folder bertingkat (recursive folder crawler).
 """
 
 import os
@@ -44,7 +45,7 @@ def format_size(bytes_size):
     return f"{n:.2f} PB"
 
 def clean_filename(filename):
-    """Membersihkan karakter ilegal pada nama file untuk Windows."""
+    """Membersihkan karakter ilegal pada nama file atau folder untuk Windows."""
     return re.sub(r'[\\/*?:"<>|]', '_', filename).strip()
 
 def load_history():
@@ -102,13 +103,14 @@ def parse_cookies():
     return cookies
 
 def extract_surl_and_pwd(url):
-    """Mengekstrak shorturl (surl) dan password (pwd) dari berbagai format link TeraBox."""
+    """Mengekstrak shorturl (surl), password (pwd), dan target subfolder path dari link TeraBox."""
     url = url.strip()
     parsed = urlparse(url)
     query = parse_qs(parsed.query)
 
     pwd = query.get("pwd", [None])[0]
     surl = query.get("surl", [None])[0]
+    subpath = query.get("path", query.get("dir", [None]))[0]
 
     if not surl:
         # Cek pola path seperti /s/1ABCDEF atau /s/ABCDEF
@@ -125,7 +127,7 @@ def extract_surl_and_pwd(url):
                 else:
                     surl = last_part
 
-    return surl, pwd
+    return surl, pwd, subpath
 
 def create_session(cookies_dict):
     """Membuat HTTP Session dengan TLS Fingerprint Chrome untuk bypass Cloudflare."""
@@ -147,10 +149,87 @@ def create_session(cookies_dict):
 
     return session
 
-def fetch_terabox_file_list(session, raw_url, surl, pwd=None):
+def query_share_list(session, domain, cand_surl, dir_path=None, page=1, js_token=None, logid=None, headers=None):
+    """Meminta daftar item (file/folder) dari endpoint /share/list TeraBox."""
+    api_url = f"https://{domain}/share/list"
+    params = {
+        "app_id": "250528",
+        "web": "1",
+        "channel": "0",
+        "shorturl": cand_surl,
+        "page": str(page),
+        "num": "100",
+    }
+    if dir_path:
+        params["dir"] = dir_path
+        params["root"] = "0"
+    else:
+        params["root"] = "1"
+
+    if js_token:
+        params["jsToken"] = js_token
+    if logid:
+        params["dp-logid"] = logid
+
+    try:
+        res = session.get(api_url, params=params, headers=headers, timeout=20)
+        if res.status_code == 200:
+            return res.json()
+    except Exception:
+        pass
+    return None
+
+def crawl_folder_recursive(session, domain, cand_surl, current_dir=None, rel_dir="", js_token=None, logid=None, headers=None):
     """
-    Menghubungi TeraBox untuk mendapatkan metadata file asli dan tautan dlink.
-    Mendukung bypass jsToken dinamis dan verifikasi password (pwd).
+    Menelusuri struktur folder TeraBox secara rekursif.
+    Mengembalikan daftar lengkap seluruh file (termasuk yang di dalam subfolder)
+    beserta path folder relatifnya.
+    """
+    all_files = []
+    page = 1
+
+    while True:
+        data = query_share_list(session, domain, cand_surl, dir_path=current_dir, page=page, js_token=js_token, logid=logid, headers=headers)
+        if not data or data.get("errno") != 0:
+            break
+
+        items = data.get("list", [])
+        if not items:
+            break
+
+        for item in items:
+            is_dir = item.get("isdir") in [1, "1", True]
+            name = item.get("server_filename", "")
+            
+            if is_dir:
+                sub_path = item.get("path")
+                clean_subname = clean_filename(name)
+                next_rel_dir = os.path.join(rel_dir, clean_subname) if rel_dir else clean_subname
+                print(f"     [*] Menelusuri subfolder: /{next_rel_dir} ...")
+                sub_files = crawl_folder_recursive(
+                    session, domain, cand_surl, 
+                    current_dir=sub_path, 
+                    rel_dir=next_rel_dir, 
+                    js_token=js_token, 
+                    logid=logid, 
+                    headers=headers
+                )
+                all_files.extend(sub_files)
+            else:
+                item["_rel_folder"] = rel_dir
+                all_files.append(item)
+
+        # Jika item kurang dari 100, berarti halaman terakhir untuk folder ini
+        if len(items) < 100:
+            break
+        page += 1
+
+    return all_files
+
+def fetch_terabox_file_list(session, raw_url, surl, pwd=None, initial_path=None):
+    """
+    Menghubungi TeraBox untuk mendapatkan seluruh file (termasuk folder & subfolder).
+    Mendukung bypass jsToken dinamis, verifikasi password (pwd), dan recursive crawling.
     """
     headers = {
         "User-Agent": USER_AGENT,
@@ -201,41 +280,36 @@ def fetch_terabox_file_list(session, raw_url, surl, pwd=None):
         except Exception:
             pass
 
-    # 3. Request API file list (mencoba shorturl murni dan dengan awalan 1 jika perlu)
+    # 3. Coba shorturl kandidat (dengan dan tanpa '1')
     candidates_surl = [surl]
     if not surl.startswith("1"):
         candidates_surl.append("1" + surl)
     else:
         candidates_surl.append(surl[1:])
 
-    for cand in candidates_surl:
-        params = {
-            "app_id": "250528",
-            "web": "1",
-            "channel": "0",
-            "shorturl": cand,
-            "root": "1",
-        }
-        if js_token:
-            params["jsToken"] = js_token
-        if logid:
-            params["dp-logid"] = logid
+    api_domains = ["www.terabox.app", "www.1024tera.com", "teraboxapp.com"]
 
-        api_domains = ["www.terabox.app", "www.1024tera.com", "teraboxapp.com"]
+    for cand in candidates_surl:
         for domain in api_domains:
-            api_url = f"https://{domain}/share/list"
-            try:
-                res = session.get(api_url, params=params, headers=headers, timeout=20)
-                if res.status_code == 200:
-                    data = res.json()
-                    errno = data.get("errno")
-                    if errno == 0 and "list" in data and len(data["list"]) > 0:
-                        return data["list"]
-                    elif errno == -1 and not pwd:
-                        print("     [!] Link ini membutuhkan Password / Kata Sandi!")
-                        return "NEED_PASSWORD"
-            except Exception:
-                continue
+            # Cek respon awal terlebih dahulu
+            test_resp = query_share_list(session, domain, cand, dir_path=initial_path, page=1, js_token=js_token, logid=logid, headers=headers)
+            if test_resp:
+                errno = test_resp.get("errno")
+                if errno == -1 and not pwd:
+                    print("     [!] Link ini membutuhkan Password / Kata Sandi!")
+                    return "NEED_PASSWORD"
+                elif errno == 0 and "list" in test_resp:
+                    # Mulai recursive crawl seluruh folder dan file
+                    files = crawl_folder_recursive(
+                        session, domain, cand, 
+                        current_dir=initial_path, 
+                        rel_dir="", 
+                        js_token=js_token, 
+                        logid=logid, 
+                        headers=headers
+                    )
+                    if files:
+                        return files
 
     return None
 
@@ -335,23 +409,23 @@ def download_with_python_stream(session, dlink, file_path, total_size=0):
         return False
 
 def process_single_link(session, raw_url, cookies_dict, history):
-    """Memproses satu tautan TeraBox: resolving -> direct dlink -> multi-thread download."""
+    """Memproses satu tautan TeraBox: resolving -> recursive crawling -> multi-thread download."""
     raw_url = raw_url.strip()
     if not raw_url or raw_url.startswith("#"):
         return False
 
-    surl, pwd = extract_surl_and_pwd(raw_url)
+    surl, pwd, initial_path = extract_surl_and_pwd(raw_url)
     if not surl:
         print(f"     [x] Gagal mengenali ID share TeraBox dari: {raw_url}")
         return False
 
     print(f"     [*] Menyelesaikan metadata TeraBox (ID: {surl}) ...")
-    file_items = fetch_terabox_file_list(session, raw_url, surl, pwd)
+    file_items = fetch_terabox_file_list(session, raw_url, surl, pwd, initial_path)
 
     if file_items == "NEED_PASSWORD":
         user_pwd = input("     [?] Tautan ini butuh kata sandi. Masukkan password (4 digit): ").strip()
         if user_pwd:
-            file_items = fetch_terabox_file_list(session, raw_url, surl, user_pwd)
+            file_items = fetch_terabox_file_list(session, raw_url, surl, user_pwd, initial_path)
 
     if not file_items or isinstance(file_items, str):
         print("     [x] Gagal mengambil daftar file TeraBox.")
@@ -359,15 +433,18 @@ def process_single_link(session, raw_url, cookies_dict, history):
         return False
 
     total_files = len(file_items)
-    print(f"     [✓] Ditemukan {total_files} file dalam share link ini.")
+    print(f"     [✓] Ditemukan total {total_files} file (termasuk di dalam subfolder).")
 
     success_count = 0
     for idx, item in enumerate(file_items, 1):
         filename = clean_filename(item.get("server_filename", f"terabox_file_{int(time.time())}"))
         filesize = item.get("size", 0)
         dlink = item.get("dlink")
+        rel_folder = item.get("_rel_folder", "")
 
+        folder_label = f"/{rel_folder}/" if rel_folder else "Root"
         print(f"\n     [{idx}/{total_files}] File: {filename}")
+        print(f"          Folder : {folder_label}")
         print(f"          Ukuran : {format_size(filesize)}")
         print(f"          Kualitas: Master Original (Lossless Bit-for-Bit)")
 
@@ -375,7 +452,9 @@ def process_single_link(session, raw_url, cookies_dict, history):
             print("          [x] Direct download link (dlink) tidak tersedia untuk file ini.")
             continue
 
-        target_path = os.path.join(DOWNLOAD_DIR, filename)
+        target_folder = os.path.join(DOWNLOAD_DIR, rel_folder) if rel_folder else DOWNLOAD_DIR
+        os.makedirs(target_folder, exist_ok=True)
+        target_path = os.path.join(target_folder, filename)
 
         # Cek apakah file sudah pernah diunduh lengkap
         if os.path.exists(target_path) and os.path.getsize(target_path) >= filesize and filesize > 0:
@@ -406,6 +485,7 @@ def main():
     print("   TERABOX MASTER ORIGINAL DOWNLOADER (16 THREADS ACCELERATED)   ")
     print("   Format   : Video, Foto, Dokumen Full Original Bit-for-Bit     ")
     print("   Engine   : curl_cffi Chrome Impersonation + aria2c 16-Thread  ")
+    print("   Fitur    : Mendukung Satu File Satuan maupun 1 Folder Penuh   ")
     print("=" * 65)
 
     cookies_dict = parse_cookies()
