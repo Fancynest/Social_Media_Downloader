@@ -157,7 +157,9 @@ def _patch_instaloader():
 
             if re.search(r'"DTSGInitialData",\[\],\{[^{}]*"token":"([^"]+)"', resp.text):
                 uid = cookie_dict.get("ds_user_id")
-                return target_name or (f"user_{uid}" if uid else "logged_in_user")
+                val = target_name or (f"user_{uid}" if uid else "logged_in_user")
+                self.username = val
+                return val
         except Exception:
             return None
 
@@ -554,6 +556,7 @@ def get_instaloader_instance(save_caption: bool = False, media_type: str = "semu
                 loader.context._session.cookies.set(k, v, domain=".instagram.com", path="/")
             logged_user = loader.test_login()
             if logged_user:
+                loader.context.username = logged_user
                 print(f"[*] Menggunakan cookie sesi aktif dari input_cookie.txt (@{logged_user})")
                 return loader
             print("[!] Cookie di input_cookie.txt sudah kedaluwarsa/logout. Jalankan LOGIN_AKUN.bat.")
