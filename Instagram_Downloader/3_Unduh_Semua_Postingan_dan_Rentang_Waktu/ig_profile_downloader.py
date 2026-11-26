@@ -497,11 +497,14 @@ def login_interactive():
 
 
 def get_instaloader_instance(save_caption: bool = False, media_type: str = "semua") -> instaloader.Instaloader:
-    """Membuat instance Instaloader dengan validasi sesi aktif."""
+    """Membuat instance Instaloader dengan validasi sesi aktif & proteksi anti-banned."""
     dl_pictures = media_type != "video"
     dl_videos = media_type != "foto"
+    windows_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     loader = instaloader.Instaloader(
-        sleep=False,
+        sleep=True,
+        user_agent=windows_ua,
+        max_connection_attempts=2,
         download_pictures=dl_pictures,
         download_videos=dl_videos,
         download_video_thumbnails=False,
@@ -524,7 +527,7 @@ def get_instaloader_instance(save_caption: bool = False, media_type: str = "semu
             try:
                 username = u_file.read_text(encoding="utf-8").strip()
                 if username:
-                    test_ldr = instaloader.Instaloader()
+                    test_ldr = instaloader.Instaloader(sleep=True, user_agent=windows_ua, max_connection_attempts=2)
                     test_ldr.load_session_from_file(username, str(s_file))
                     # Validasi login
                     logged_user = test_ldr.test_login()
@@ -701,7 +704,12 @@ def main():
                     loader.download_post(post, target=target_dir)
                     print("    [✓] Berhasil diunduh.")
                 except Exception as dl_err:
+                    err_low = str(dl_err).lower()
                     print(f"    [!] Kendala saat mengunduh: {dl_err}")
+                    if any(k in err_low for k in ("401", "429", "challenge", "checkpoint", "login", "wait a few minutes", "feedback_required")):
+                        print("    [!] Deteksi pembatasan/challenge Instagram -> menghentikan sementara agar akun aman.")
+                        rate_limited = True
+                        break
 
                 print("-" * 65)
 
@@ -709,7 +717,13 @@ def main():
                     print(f"[*] Batas maksimal {max_posts} postingan untuk @{target} tercapai.")
                     break
 
-                time.sleep(random.uniform(1.2, 1.8))
+                # Jeda aman anti-banned: jeda acak 3-5.5 detik per post & istirahat berkala setiap 15 post
+                if downloaded % 15 == 0:
+                    pause_s = random.uniform(20.0, 35.0)
+                    print(f"    [*] Cooldown anti-limit {pause_s:.0f} detik (setelah {downloaded} post)...")
+                    time.sleep(pause_s)
+                else:
+                    time.sleep(random.uniform(3.0, 5.5))
 
         except KeyboardInterrupt:
             print(f"\n[!] Proses pemindaian @{target} dihentikan oleh pengguna.")
@@ -722,10 +736,9 @@ def main():
             rate_limited = True
         except Exception as e:
             err_str = str(e)
-            if "401" in err_str or "wait a few minutes" in err_str or "429" in err_str:
-                print("\n[!] Rate limit Instagram tercapai (401 Unauthorized / Too Many Requests).")
-                print("    Instagram membatasi permintaan dari alamat IP Anda saat ini.")
-                print("    Tips: Nyalakan Mode Pesawat di HP selama 5 detik lalu matikan lagi untuk ganti IP baru.")
+            if any(k in err_str.lower() for k in ("401", "wait a few minutes", "429", "challenge", "checkpoint")):
+                print("\n[!] Rate limit / Challenge Instagram terdeteksi -> menghentikan agar akun aman.")
+                print("    Tips: Istirahatkan akun beberapa jam atau ganti IP (Mode Pesawat di HP).")
                 rate_limited = True
             else:
                 print(f"\n[x] Terjadi kendala saat memindai: {e}")
@@ -733,15 +746,16 @@ def main():
         summary_report.append({
             "target": target,
             "downloaded": downloaded,
-            "status": "Selesai" if not rate_limited else "Rate limit"
+            "status": "Selesai" if not rate_limited else "Dihentikan (Aman)"
         })
 
         if stopped_early or rate_limited:
             break
 
         if idx < total_acc:
-            print("\n[*] Jeda 5 detik sebelum memproses akun berikutnya...")
-            time.sleep(5)
+            acc_pause = random.uniform(12.0, 20.0)
+            print(f"\n[*] Jeda {acc_pause:.0f} detik sebelum memproses akun berikutnya...")
+            time.sleep(acc_pause)
 
     print("\n" + "=" * 65)
     print("                 RINGKASAN PROSES DOWNLOAD")
