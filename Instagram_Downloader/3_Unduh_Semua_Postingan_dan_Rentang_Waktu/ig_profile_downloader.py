@@ -48,36 +48,33 @@ def _patch_instaloader():
     """
     # 1. Patch _web_api_tokens
     def patched_web_api_tokens(self):
-        try:
-            sessionid = self._session.cookies.get_dict().get("sessionid", "")
-            if sessionid not in self._web_api_tokens_cache:
-                html = self._get_page(self._session, "")
-                tokens = {}
-                for name, patterns in [
-                    ("fb_dtsg", [
-                        r'"DTSGInitialData",\[\],\{[^{}]*"token":"([^"]+)"',
-                        r'"DTSGInitData",\[\],\{[^{}]*"token":"([^"]+)"',
-                        r'"token":"([a-zA-Z0-9_\-]+:\d+:\d+)"',
-                        r'"dtsg":\{"token":"([^"]+)"',
-                    ]),
-                    ("lsd", [
-                        r'"LSD",\[\],\{[^{}]*"token":"([^"]+)"',
-                        r'"token":"([a-zA-Z0-9_\-]+)"',
-                    ]),
-                    ("av", [
-                        r'"IG_USER_EIMU":"?(\d+)',
-                        r'"actor_id":"?(\d+)',
-                    ]),
-                ]:
-                    for pattern in patterns:
-                        m = re.search(pattern, html)
-                        if m:
-                            tokens[name] = m.group(1)
-                            break
-                self._web_api_tokens_cache[sessionid] = tokens
-            return self._web_api_tokens_cache.get(sessionid, {})
-        except Exception:
-            return {}
+        sessionid = self._session.cookies.get_dict().get("sessionid", "")
+        if sessionid not in self._web_api_tokens_cache:
+            html = self._get_page(self._session, "")
+            tokens = {}
+            for name, patterns in [
+                ("fb_dtsg", [
+                    r'"DTSGInitialData",\[\],\{[^{}]*"token":"([^"]+)"',
+                    r'"DTSGInitData",\[\],\{[^{}]*"token":"([^"]+)"',
+                    r'"dtsg":\{"token":"([^"]+)"',
+                ]),
+                ("lsd", [
+                    r'"LSD",\[\],\{[^{}]*"token":"([^"]+)"',
+                ]),
+                ("av", [
+                    r'"IG_USER_EIMU":"?(\d+)',
+                    r'"actor_id":"?(\d+)',
+                ]),
+            ]:
+                for pattern in patterns:
+                    m = re.search(pattern, html)
+                    if m and m.group(1):
+                        tokens[name] = m.group(1)
+                        break
+            if self.is_logged_in and not tokens.get("fb_dtsg"):
+                raise LoginRequiredException("Sesi login Instagram kedaluwarsa (token fb_dtsg kosong).")
+            self._web_api_tokens_cache[sessionid] = tokens
+        return self._web_api_tokens_cache.get(sessionid, {})
 
     instaloader.InstaloaderContext._web_api_tokens = patched_web_api_tokens
 
@@ -117,12 +114,13 @@ def _patch_instaloader():
                 pid = m_pid[0]
                 node = {"id": str(pid), "pk": int(pid), "username": username.lower()}
                 profile = cls(context, node)
+                profile._node = cls._normalize_profile_data(profile._node)
+                profile._has_full_metadata = True
             else:
                 raise ProfileNotExistsException(f"Profile {username} does not exist.")
 
         if profile and hasattr(profile, "_node") and isinstance(profile._node, dict):
             profile._node = cls._normalize_profile_data(profile._node)
-            profile._has_full_metadata = True
 
         return profile
 
@@ -140,8 +138,8 @@ def _patch_instaloader():
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         }
         try:
-            resp = self._session.get("https://www.instagram.com/", headers=headers, timeout=12, allow_redirects=True)
-            if "accounts/login" in resp.url.lower():
+            resp = self._session.get("https://www.instagram.com/", headers=headers, timeout=12, allow_redirects=False)
+            if resp.status_code != 200:
                 return None
 
             idx = resp.text.find('["PolarisViewer"')
@@ -157,16 +155,15 @@ def _patch_instaloader():
                 self.username = m_viewer.group(1)
                 return m_viewer.group(1)
 
-            if resp.status_code == 200 and cookie_dict.get("ds_user_id"):
-                return target_name or f"user_{cookie_dict.get('ds_user_id')}"
+            if re.search(r'"DTSGInitialData",\[\],\{[^{}]*"token":"([^"]+)"', resp.text):
+                uid = cookie_dict.get("ds_user_id")
+                return target_name or (f"user_{uid}" if uid else "logged_in_user")
         except Exception:
-            pass
+            return None
 
-        return target_name if target_name else None
+        return None
 
     instaloader.InstaloaderContext.test_login = patched_test_login
-
-    instaloader.Profile.from_username = classmethod(patched_from_username)
 
 
 _patch_instaloader()
@@ -391,22 +388,27 @@ def parse_cookie_file(cookie_path: Path) -> dict:
 def verify_and_get_username(cookies: dict) -> Tuple[bool, Optional[str]]:
     """Memverifikasi validitas cookies ke Instagram web dan mendeteksi username akun."""
     session = requests.Session()
-    for domain in [".instagram.com", "instagram.com", "www.instagram.com"]:
-        for k, v in cookies.items():
-            session.cookies.set(k, v, domain=domain, path="/")
+    for k, v in cookies.items():
+        session.cookies.set(k, v, domain=".instagram.com", path="/")
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     }
     try:
-        r = session.get("https://www.instagram.com/", headers=headers, timeout=12)
-        if r.status_code == 200:
-            m = re.search(r'"username":\s*"([^"]+)"', r.text)
+        r = session.get("https://www.instagram.com/", headers=headers, timeout=12, allow_redirects=False)
+        if r.status_code != 200:
+            return False, None
+        idx = r.text.find('["PolarisViewer"')
+        if idx != -1:
+            m = re.search(r'"username":"([^"]+)"', r.text[idx : idx + 4000])
             if m:
                 return True, m.group(1)
-            if '"viewerId":' in r.text or "viewer" in r.text or "is_logged_in" in r.text:
-                return True, None
+        m_v = re.search(r'"viewer":\s*\{[^}]*?"username":"([^"]+)"', r.text)
+        if m_v:
+            return True, m_v.group(1)
+        if re.search(r'"DTSGInitialData",\[\],\{[^{}]*"token":"([^"]+)"', r.text):
+            return True, None
     except Exception:
         pass
     return False, None
@@ -461,9 +463,8 @@ def login_interactive():
             username = extract_username(raw_u) or f"user_{uid}"
 
         loader = instaloader.Instaloader()
-        for domain in [".instagram.com", "instagram.com"]:
-            for k, v in cookies.items():
-                loader.context._session.cookies.set(k, v, domain=domain, path="/")
+        for k, v in cookies.items():
+            loader.context._session.cookies.set(k, v, domain=".instagram.com", path="/")
         loader.context.username = username
 
         try:
@@ -549,13 +550,18 @@ def get_instaloader_instance(save_caption: bool = False, media_type: str = "semu
     cookies = parse_cookie_file(COOKIE_FILE)
     if "sessionid" in cookies:
         try:
-            for domain in [".instagram.com", "instagram.com"]:
-                for k, v in cookies.items():
-                    loader.context._session.cookies.set(k, v, domain=domain, path="/")
-            print("[*] Menggunakan cookie sesi dari input_cookie.txt")
-            return loader
+            for k, v in cookies.items():
+                loader.context._session.cookies.set(k, v, domain=".instagram.com", path="/")
+            logged_user = loader.test_login()
+            if logged_user:
+                print(f"[*] Menggunakan cookie sesi aktif dari input_cookie.txt (@{logged_user})")
+                return loader
+            print("[!] Cookie di input_cookie.txt sudah kedaluwarsa/logout. Jalankan LOGIN_AKUN.bat.")
+            loader.context._session.cookies.clear()
+            loader.context.username = None
         except Exception:
-            pass
+            loader.context._session.cookies.clear()
+            loader.context.username = None
 
     print("[*] Berjalan dalam Mode Tamu publik (tanpa login).")
     return loader
