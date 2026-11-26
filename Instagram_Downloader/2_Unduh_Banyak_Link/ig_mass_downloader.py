@@ -102,8 +102,6 @@ def _patch_instaloader():
                 pid = m_pid[0]
                 node = {"id": str(pid), "pk": int(pid), "username": username.lower()}
                 profile = cls(context, node)
-                profile._node = cls._normalize_profile_data(profile._node)
-                profile._has_full_metadata = True
             else:
                 raise instaloader.exceptions.ProfileNotExistsException(f"Profile {username} does not exist.")
 
@@ -116,7 +114,7 @@ def _patch_instaloader():
 
     # 4. Patch test_login agar mendeteksi sesi web langsung
     def patched_test_login(self) -> Optional[str]:
-        cookie_dict = self._session.cookies.get_dict()
+        cookie_dict = {c.name: c.value for c in self._session.cookies if c.value}
         if not cookie_dict.get("sessionid"):
             return None
 
@@ -124,9 +122,15 @@ def _patch_instaloader():
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
         }
         try:
-            resp = self._session.get("https://www.instagram.com/", headers=headers, timeout=12, allow_redirects=False)
+            probe_sess = requests.Session()
+            for k, v in cookie_dict.items():
+                probe_sess.cookies.set(k, v, domain=".instagram.com", path="/")
+            resp = probe_sess.get("https://www.instagram.com/", headers=headers, timeout=12, allow_redirects=False)
             if resp.status_code != 200:
                 return None
 
@@ -145,7 +149,9 @@ def _patch_instaloader():
 
             if re.search(r'"DTSGInitialData",\[\],\{[^{}]*"token":"([^"]+)"', resp.text):
                 uid = cookie_dict.get("ds_user_id")
-                return target_name or (f"user_{uid}" if uid else "logged_in_user")
+                val = target_name or (f"user_{uid}" if uid else "logged_in_user")
+                self.username = val
+                return val
         except Exception:
             return None
 
