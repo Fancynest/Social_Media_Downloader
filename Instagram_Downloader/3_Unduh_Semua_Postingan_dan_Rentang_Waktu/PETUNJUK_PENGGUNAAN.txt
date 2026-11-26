@@ -9,7 +9,11 @@ LANGKAH PENGGUNAAN:
    - DARI_TANGGAL   : Tanggal awal (format YYYY-MM-DD, contoh: 2024-01-01)
    - SAMPAI_TANGGAL : Tanggal akhir (format YYYY-MM-DD, contoh: 2024-12-31)
    (Biarkan kosong jika ingin mengunduh semua postingan tanpa batas waktu).
-3. Masukkan akun target pada TARGET_AKUN:
+3. Atur jenis media pada TIPE_MEDIA (opsional):
+   - TIPE_MEDIA = semua  (unduh foto & video, default)
+   - TIPE_MEDIA = foto   (hanya unduh foto)
+   - TIPE_MEDIA = video  (hanya unduh video & Reels)
+4. Masukkan akun target pada TARGET_AKUN:
    Contoh:
    https://www.instagram.com/natgeo/
    atau username saja (misal: natgeo).

@@ -218,6 +218,7 @@ def read_config() -> Optional[Dict[str, Any]]:
     sampai_tanggal = None
     max_posts = 0
     save_caption = False
+    media_type = "semua"
 
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         for line in f:
@@ -270,6 +271,19 @@ def read_config() -> Optional[Dict[str, Any]]:
                     save_caption = val in ("ya", "y", "yes", "true", "1")
                 continue
 
+            if upper.startswith("TIPE_MEDIA") or upper.startswith("MEDIA_TYPE"):
+                target_block = False
+                parts = stripped.split("=", 1)
+                if len(parts) == 2:
+                    val = parts[1].strip().lower()
+                    if val in ("foto", "photo", "image", "gambar"):
+                        media_type = "foto"
+                    elif val in ("video", "vid", "reel", "reels"):
+                        media_type = "video"
+                    else:
+                        media_type = "semua"
+                continue
+
             if target_block:
                 items = re.split(r"[,\s]+", stripped)
                 raw_targets.extend([it for it in items if it and not it.startswith("#")])
@@ -289,6 +303,7 @@ def read_config() -> Optional[Dict[str, Any]]:
         "sampai_tanggal": sampai_tanggal,
         "max_posts": max_posts,
         "save_caption": save_caption,
+        "media_type": media_type,
     }
 
 
@@ -324,12 +339,21 @@ def prompt_user_input() -> Dict[str, Any]:
     raw_cap = input("Simpan teks caption ke file .txt? (y/N, default N): ").strip().lower()
     save_caption = raw_cap in ("y", "ya", "yes", "true", "1")
 
+    raw_media = input("Filter Tipe Media (semua/foto/video, default semua): ").strip().lower()
+    if raw_media in ("foto", "photo", "image", "gambar"):
+        media_type = "foto"
+    elif raw_media in ("video", "vid", "reel", "reels"):
+        media_type = "video"
+    else:
+        media_type = "semua"
+
     return {
         "targets": targets,
         "dari_tanggal": dari_tanggal,
         "sampai_tanggal": sampai_tanggal,
         "max_posts": max_posts,
         "save_caption": save_caption,
+        "media_type": media_type,
     }
 
 
@@ -469,12 +493,14 @@ def login_interactive():
         print("    Tips: Gunakan metode 1 (Cookies) jika Instagram memblokir login terminal.")
 
 
-def get_instaloader_instance(save_caption: bool = False) -> instaloader.Instaloader:
+def get_instaloader_instance(save_caption: bool = False, media_type: str = "semua") -> instaloader.Instaloader:
     """Membuat instance Instaloader dengan validasi sesi aktif."""
+    dl_pictures = media_type != "video"
+    dl_videos = media_type != "foto"
     loader = instaloader.Instaloader(
         sleep=False,
-        download_pictures=True,
-        download_videos=True,
+        download_pictures=dl_pictures,
+        download_videos=dl_videos,
         download_video_thumbnails=False,
         download_geotags=False,
         download_comments=False,
@@ -501,6 +527,8 @@ def get_instaloader_instance(save_caption: bool = False) -> instaloader.Instaloa
                     logged_user = test_ldr.test_login()
                     if logged_user:
                         print(f"[*] Menggunakan sesi login akun: @{logged_user}")
+                        test_ldr.download_pictures = dl_pictures
+                        test_ldr.download_videos = dl_videos
                         test_ldr.save_metadata = False
                         test_ldr.download_video_thumbnails = False
                         test_ldr.post_metadata_txt_pattern = "{caption}" if save_caption else ""
@@ -560,6 +588,7 @@ def main():
         print(f"[*] Rentang Waktu  : {d_str} s/d {s_str}")
         print(f"[*] Maksimal Post  : {config['max_posts'] if config['max_posts'] > 0 else 'Semua (Tanpa Batas)'}")
         print(f"[*] Simpan Caption : {'Ya' if config.get('save_caption') else 'Tidak'}")
+        print(f"[*] Filter Media   : {config.get('media_type', 'semua').upper()}")
 
         pilihan = input("\nJalankan dengan pengaturan ini? (Y/n): ").strip().lower()
         if pilihan in ("n", "no"):
@@ -572,8 +601,9 @@ def main():
     sampai_tanggal = config.get("sampai_tanggal")
     max_posts = config["max_posts"]
     save_caption = config.get("save_caption", False)
+    filter_media = config.get("media_type", "semua")
 
-    loader = get_instaloader_instance(save_caption=save_caption)
+    loader = get_instaloader_instance(save_caption=save_caption, media_type=filter_media)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     total_acc = len(targets)
@@ -629,9 +659,19 @@ def main():
                 scanned += 1
                 post_dt = post.date_local.date()
                 date_str = post.date_local.strftime("%Y-%m-%d %H:%M")
-                media_type = "Video/Reel" if post.is_video else "Foto/Korsel"
+                media_label = "Video/Reel" if post.is_video else "Foto/Korsel"
 
-                print(f"[{scanned}] [{date_str}] [{media_type}] {post.shortcode}")
+                print(f"[{scanned}] [{date_str}] [{media_label}] {post.shortcode}")
+
+                # Filter tipe media (foto doang atau video doang)
+                if filter_media == "video" and (post.typename == "GraphImage" or (not post.is_video and post.typename != "GraphSidecar")):
+                    print(f"    [-] Postingan bertipe foto, dilewati (filter: video doang).")
+                    print("-" * 65)
+                    continue
+                if filter_media == "foto" and post.typename == "GraphVideo":
+                    print(f"    [-] Postingan bertipe video, dilewati (filter: foto doang).")
+                    print("-" * 65)
+                    continue
 
                 # Filter batas akhir (terbaru)
                 if sampai_tanggal and post_dt > sampai_tanggal:

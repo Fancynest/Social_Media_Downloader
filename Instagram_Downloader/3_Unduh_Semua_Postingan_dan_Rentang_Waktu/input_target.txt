@@ -10,6 +10,7 @@
 #                    Bisa ditulis satu per baris atau dipisahkan koma/spasi.
 # 4. MAKSIMAL_POST : Batas jumlah postingan yang diunduh per akun (isi 0 untuk SEMUA).
 # 5. SIMPAN_CAPTION: Simpan teks caption ke file .txt? (ya / tidak, default: tidak).
+# 6. TIPE_MEDIA    : Filter jenis media (semua / foto / video, default: semua).
 # ==============================================================================
 
 DARI_TANGGAL=
@@ -20,3 +21,4 @@ https://www.instagram.com/herry_hoperz?psln=MWhraWIwb3RpcXRsbw==
 
 MAKSIMAL_POST=0
 SIMPAN_CAPTION=tidak
+TIPE_MEDIA=semua
